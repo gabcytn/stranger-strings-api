@@ -3,6 +3,7 @@ package com.gabcytn.shortnotice.Controller;
 import com.gabcytn.shortnotice.DTO.UserLoginDTO;
 import com.gabcytn.shortnotice.DTO.UserRegisterDTO;
 import com.gabcytn.shortnotice.Service.AuthenticationService;
+import com.gabcytn.shortnotice.Service.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +19,17 @@ public class AuthenticationController
 {
 	private final AuthenticationService authenticationService;
 	private final AuthenticationManager authenticationManager;
+	private final JwtService jwtService;
 
-	public AuthenticationController(AuthenticationService authenticationService, AuthenticationManager authenticationManager)
+	public AuthenticationController(
+					AuthenticationService authenticationService,
+					AuthenticationManager authenticationManager,
+					JwtService jwtService
+	)
 	{
 		this.authenticationService = authenticationService;
 		this.authenticationManager = authenticationManager;
+		this.jwtService = jwtService;
 	}
 
 	@PostMapping("/register")
@@ -48,7 +55,11 @@ public class AuthenticationController
 											userLoginDTO.getPassword()
 							);
 			Authentication authentication = authenticationManager.authenticate(authenticationToken);
-			return authentication.isAuthenticated() ? "Success" : "Failed";
+
+			if (authentication.isAuthenticated())
+				return jwtService.generateToken(userLoginDTO.getUsername());
+
+			return "Failed";
 		} catch (Exception e) {
 			System.err.println("Exception while trying to log in...");
 			System.err.println(e.getMessage());

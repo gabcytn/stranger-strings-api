@@ -15,55 +15,48 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class AuthenticationController
-{
-	private final AuthenticationService authenticationService;
-	private final AuthenticationManager authenticationManager;
-	private final JwtService jwtService;
+public class AuthenticationController {
+  private final AuthenticationService authenticationService;
+  private final AuthenticationManager authenticationManager;
+  private final JwtService jwtService;
 
-	public AuthenticationController(
-					AuthenticationService authenticationService,
-					AuthenticationManager authenticationManager,
-					JwtService jwtService
-	)
-	{
-		this.authenticationService = authenticationService;
-		this.authenticationManager = authenticationManager;
-		this.jwtService = jwtService;
-	}
+  public AuthenticationController(
+      AuthenticationService authenticationService,
+      AuthenticationManager authenticationManager,
+      JwtService jwtService) {
+    this.authenticationService = authenticationService;
+    this.authenticationManager = authenticationManager;
+    this.jwtService = jwtService;
+  }
 
-	@PostMapping("/register")
-	public ResponseEntity<Void> register(@Valid @RequestBody UserRegisterDTO userRegisterDTO)
-	{
-		try {
-			authenticationService.register(userRegisterDTO);
-			return new ResponseEntity<>(HttpStatus.CREATED);
-		} catch (Exception e) {
-			System.err.println("Error in user registration");
-			System.err.println(e.getMessage());
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
+  @PostMapping("/register")
+  public ResponseEntity<Void> register(@Valid @RequestBody UserRegisterDTO userRegisterDTO) {
+    try {
+      authenticationService.register(userRegisterDTO);
+      return new ResponseEntity<>(HttpStatus.CREATED);
+    } catch (Exception e) {
+      System.err.println("Error in user registration");
+      System.err.println(e.getMessage());
+      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
-	@PostMapping("/login")
-	public String login(@Valid @RequestBody UserLoginDTO userLoginDTO)
-	{
-		try {
-			Authentication authenticationToken =
-							new UsernamePasswordAuthenticationToken(
-											userLoginDTO.getUsername(),
-											userLoginDTO.getPassword()
-							);
-			Authentication authentication = authenticationManager.authenticate(authenticationToken);
+  @PostMapping("/login")
+  public String login(@Valid @RequestBody UserLoginDTO userLoginDTO) {
+    try {
+      Authentication authenticationToken =
+          new UsernamePasswordAuthenticationToken(
+              userLoginDTO.getUsername(), userLoginDTO.getPassword());
+      Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
-			if (authentication.isAuthenticated())
-				return jwtService.generateToken(userLoginDTO.getUsername());
+      if (authentication.isAuthenticated())
+        return jwtService.generateToken(userLoginDTO.getUsername());
 
-			return "Failed";
-		} catch (Exception e) {
-			System.err.println("Exception while trying to log in...");
-			System.err.println(e.getMessage());
-			return "Error";
-		}
-	}
+      return "Failed";
+    } catch (Exception e) {
+      System.err.println("Exception while trying to log in...");
+      System.err.println(e.getMessage());
+      return "Error";
+    }
+  }
 }

@@ -19,66 +19,60 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig
-{
-	private final JwtFilter jwtFilter;
-	private final UserDetailsService userDetailsService;
+public class SecurityConfig {
+  private final JwtFilter jwtFilter;
+  private final UserDetailsService userDetailsService;
 
-	public SecurityConfig (UserDetailsServiceAuthentication userDetailsService, JwtFilter jwtFilter)
-	{
-		this.userDetailsService = userDetailsService;
-		this.jwtFilter = jwtFilter;
-	}
+  public SecurityConfig(UserDetailsServiceAuthentication userDetailsService, JwtFilter jwtFilter) {
+    this.userDetailsService = userDetailsService;
+    this.jwtFilter = jwtFilter;
+  }
 
-	@Bean
-	public AuthenticationProvider authenticationProvider ()
-	{
-		DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-		provider.setPasswordEncoder(passwordEncoder());
-		provider.setUserDetailsService(userDetailsService);
-		return provider;
-	}
+  @Bean
+  public AuthenticationProvider authenticationProvider() {
+    DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+    provider.setPasswordEncoder(passwordEncoder());
+    provider.setUserDetailsService(userDetailsService);
+    return provider;
+  }
 
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+    // disable csrf
+    httpSecurity.csrf(AbstractHttpConfigurer::disable);
 
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception
-	{
-		// disable csrf
-		httpSecurity.csrf(AbstractHttpConfigurer::disable);
+    // disable http basic
+    httpSecurity.httpBasic(AbstractHttpConfigurer::disable);
 
-		// disable http basic
-		httpSecurity.httpBasic(AbstractHttpConfigurer::disable);
+    // disable default form login
+    httpSecurity.formLogin(AbstractHttpConfigurer::disable);
 
-		// disable default form login
-		httpSecurity.formLogin(AbstractHttpConfigurer::disable);
+    httpSecurity.authorizeHttpRequests(
+        request -> {
+          request.requestMatchers("/register", "/login").permitAll().anyRequest().authenticated();
+        });
 
-		httpSecurity.authorizeHttpRequests(request -> {
-			request.requestMatchers("/register", "/login")
-							.permitAll()
-							.anyRequest()
-							.authenticated();
-		});
+    // stateless session management
+    httpSecurity.sessionManagement(
+        httpSecuritySessionManagementConfigurer -> {
+          httpSecuritySessionManagementConfigurer.sessionCreationPolicy(
+              SessionCreationPolicy.STATELESS);
+        });
 
-		// stateless session management
-		httpSecurity.sessionManagement(httpSecuritySessionManagementConfigurer -> {
-			httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-		});
+    // jwt filter
+    httpSecurity.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
-		// jwt filter
-		httpSecurity.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+    return httpSecurity.build();
+  }
 
-		return httpSecurity.build();
-	}
+  @Bean
+  public AuthenticationManager authenticationManager(
+      AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    return authenticationConfiguration.getAuthenticationManager();
+  }
 
-	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception
-	{
-		return authenticationConfiguration.getAuthenticationManager();
-	}
-
-	@Bean
-	public PasswordEncoder passwordEncoder()
-	{
-		return new BCryptPasswordEncoder(12);
-	}
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder(12);
+  }
 }

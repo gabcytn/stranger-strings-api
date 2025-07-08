@@ -5,13 +5,12 @@ import com.gabcytn.shortnotice.Validation.PasswordsMatch;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-public class PasswordsMatchValidator implements ConstraintValidator<PasswordsMatch, Object>
-{
-	@Override
-	public boolean isValid(Object obj, ConstraintValidatorContext constraintValidatorContext) {
-		if (obj instanceof UserRegisterDTO dto)
-			return dto.getPassword().equals(dto.getConfirmPassword());
+public class PasswordsMatchValidator implements ConstraintValidator<PasswordsMatch, Object> {
+  @Override
+  public boolean isValid(Object obj, ConstraintValidatorContext constraintValidatorContext) {
+    if (obj instanceof UserRegisterDTO dto)
+      return dto.getPassword().equals(dto.getConfirmPassword());
 
-		return false;
-	}
+    return false;
+  }
 }

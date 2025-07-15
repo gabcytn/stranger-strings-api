@@ -1,6 +1,6 @@
 package com.gabcytn.shortnotice.Config;
 
-import com.gabcytn.shortnotice.Service.UserDetailsServiceAuthentication;
+import com.gabcytn.shortnotice.Service.UserDetailsServiceAuth;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,7 +23,7 @@ public class SecurityConfig {
   private final JwtFilter jwtFilter;
   private final UserDetailsService userDetailsService;
 
-  public SecurityConfig(UserDetailsServiceAuthentication userDetailsService, JwtFilter jwtFilter) {
+  public SecurityConfig(UserDetailsServiceAuth userDetailsService, JwtFilter jwtFilter) {
     this.userDetailsService = userDetailsService;
     this.jwtFilter = jwtFilter;
   }
@@ -49,7 +49,7 @@ public class SecurityConfig {
 
     httpSecurity.authorizeHttpRequests(
         request -> {
-          request.requestMatchers("/register", "/login").permitAll().anyRequest().authenticated();
+          request.requestMatchers("/auth/**").permitAll().anyRequest().authenticated();
         });
 
     // stateless session management

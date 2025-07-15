@@ -9,18 +9,22 @@ import jakarta.validation.constraints.Size;
 
 @PasswordsMatch
 public class UserRegisterDTO {
-  @NotNull @Email @UniqueEmail private String email;
+  @NotNull(message = "Email is required.")
+  @Email
+  @UniqueEmail(message = "Email already taken.")
+  private String email;
 
-  @NotNull
-  @UniqueUsername
+  @NotNull(message = "Username is required.")
+  @UniqueUsername(message = "Username already taken.")
   @Size(min = 6, max = 64, message = "Username must be between 8 and 64 characters long.")
   private String username;
 
-  @NotNull
+  @NotNull(message = "Password is required.")
   @Size(min = 8, max = 64, message = "Password must be between 8 and 64 characters long.")
   private String password;
 
-  @NotNull private String confirmPassword;
+  @NotNull(message = "Confirm password is required.")
+  private String confirmPassword;
 
   public UserRegisterDTO(String email, String username, String password, String confirmPassword) {
     this.email = email;

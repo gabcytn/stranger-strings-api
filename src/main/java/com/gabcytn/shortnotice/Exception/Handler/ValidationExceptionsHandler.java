@@ -3,6 +3,8 @@ package com.gabcytn.shortnotice.Exception.Handler;
 import com.gabcytn.shortnotice.DTO.ValidationErrorResponseDTO;
 import java.util.List;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class ValidationExceptionsHandler {
   @ExceptionHandler({MethodArgumentNotValidException.class})
   public ResponseEntity<ValidationErrorResponseDTO> handle(

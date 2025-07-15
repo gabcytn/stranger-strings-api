@@ -1,72 +1,75 @@
 package com.gabcytn.shortnotice.Service;
 
+import com.gabcytn.shortnotice.DTO.CacheData;
+import com.gabcytn.shortnotice.DAO.RedisCacheDao;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 @Service
 public class JwtService {
-  private final String SECRET_KEY;
+  private final RedisCacheDao redisCacheDao;
 
-  public JwtService() {
-    this.SECRET_KEY = generateSecretKey();
+  @Value("${security.jwt.secret-key}")
+  private String secretKey;
+
+  @Value("${security.jwt.expiration-time}")
+  private long jwtExpiration;
+
+  public JwtService(RedisCacheDao redisCacheDao) {
+    this.redisCacheDao = redisCacheDao;
   }
 
-  private String generateSecretKey() {
-    try {
-      KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacSHA256");
-      SecretKey secretKey = keyGenerator.generateKey();
-      return Base64.getEncoder().encodeToString(secretKey.getEncoded());
-    } catch (Exception e) {
-      throw new RuntimeException("Error generating secret key: " + e.getMessage());
-    }
-  }
-
-  public String generateToken(String username) {
-    Map<String, Object> claims = new HashMap<>();
-
-    return Jwts.builder()
-        .claims(claims)
-        .subject(username)
-        .issuedAt(new Date(System.currentTimeMillis()))
-        .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 3))
-        .signWith(getKey(), SignatureAlgorithm.HS256)
-        .compact();
-  }
-
-  private Key getKey() {
-    byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
-    return Keys.hmacShaKeyFor(keyBytes);
-  }
-
-  public String extractUserName(String token) {
+  public String extractUsername(String token) {
     return extractClaim(token, Claims::getSubject);
   }
 
-  private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
+  public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
     final Claims claims = extractAllClaims(token);
-    return claimResolver.apply(claims);
+    return claimsResolver.apply(claims);
   }
 
-  private Claims extractAllClaims(String token) {
-    return Jwts.parser().setSigningKey(getKey()).build().parseClaimsJws(token).getBody();
+  public String generateToken(String username) {
+    return generateToken(new HashMap<>(), username);
   }
 
-  public boolean validateToken(String token, UserDetails userDetails) {
-    final String userName = extractUserName(token);
-    return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+  public String generateToken(Map<String, Object> extraClaims, String username) {
+    return buildToken(extraClaims, username, jwtExpiration);
+  }
+
+  public long getExpirationTime() {
+    return jwtExpiration;
+  }
+
+  private String buildToken(Map<String, Object> extraClaims, String username, long expiration) {
+    return Jwts.builder()
+            .claims(extraClaims)
+            .subject(username)
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + expiration))
+            .signWith(getSignInKey())
+            .compact();
+  }
+
+  public boolean isTokenValid(String token, UserDetails userDetails) {
+    final String username = extractUsername(token);
+    return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
   }
 
   private boolean isTokenExpired(String token) {
@@ -75,5 +78,48 @@ public class JwtService {
 
   private Date extractExpiration(String token) {
     return extractClaim(token, Claims::getExpiration);
+  }
+
+  private Claims extractAllClaims(String token) {
+    return Jwts.parser().setSigningKey(getSignInKey()).build().parseClaimsJws(token).getBody();
+  }
+
+  private Key getSignInKey() {
+    byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+    return Keys.hmacShaKeyFor(keyBytes);
+  }
+
+  public void generateRefreshToken(
+          HttpServletResponse response, String tokenValidatorAsString, Long expiration) {
+    String refreshToken = hashString(generateRandomString());
+    Cookie cookie = new Cookie("X-REFRESH-TOKEN", refreshToken);
+    cookie.setHttpOnly(true);
+    cookie.setPath("/");
+    cookie.setMaxAge(3600);
+    response.addCookie(cookie);
+    redisCacheDao.save(new CacheData(refreshToken, tokenValidatorAsString, expiration));
+  }
+
+  private String hashString(String text) {
+    try {
+      MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = messageDigest.digest(text.getBytes(StandardCharsets.UTF_8));
+      return Base64.getEncoder().encodeToString(hash);
+    } catch (NoSuchAlgorithmException exception) {
+      System.err.println("Error generating refresh token");
+      System.err.println(exception.getMessage());
+      return "";
+    }
+  }
+
+  private String generateRandomString() {
+    byte[] byteArray = new byte[32];
+    SecureRandom secureRandom = new SecureRandom();
+    secureRandom.nextBytes(byteArray);
+    StringBuilder sb = new StringBuilder();
+    for (byte b : byteArray) {
+      sb.append(String.format("%02x", b));
+    }
+    return sb.toString();
   }
 }

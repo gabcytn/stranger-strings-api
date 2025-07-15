@@ -12,9 +12,14 @@ public class UserLoginDTO {
   @NotBlank(message = "Password must not be blank")
   private String password;
 
-  public UserLoginDTO(String username, String password) {
+  @NotNull(message = "Device name is required.")
+  @NotBlank(message = "Device name must not be blank")
+  private String deviceName;
+
+  public UserLoginDTO(String username, String password, String deviceName) {
     this.username = username;
     this.password = password;
+    this.deviceName = deviceName;
   }
 
   public String getUsername() {
@@ -31,5 +36,13 @@ public class UserLoginDTO {
 
   public void setPassword(String password) {
     this.password = password;
+  }
+
+  public String getDeviceName() {
+    return deviceName;
+  }
+
+  public void setDeviceName(String deviceName) {
+    this.deviceName = deviceName;
   }
 }

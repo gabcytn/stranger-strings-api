@@ -1,62 +1,53 @@
 package com.gabcytn.shortnotice.Controller;
 
-import com.gabcytn.shortnotice.DTO.UserLoginDTO;
-import com.gabcytn.shortnotice.DTO.UserRegisterDTO;
+import com.gabcytn.shortnotice.DTO.*;
+import com.gabcytn.shortnotice.Exception.AuthenticationException;
 import com.gabcytn.shortnotice.Service.AuthenticationService;
-import com.gabcytn.shortnotice.Service.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/auth")
 public class AuthenticationController {
   private final AuthenticationService authenticationService;
-  private final AuthenticationManager authenticationManager;
-  private final JwtService jwtService;
 
-  public AuthenticationController(
-      AuthenticationService authenticationService,
-      AuthenticationManager authenticationManager,
-      JwtService jwtService) {
+  public AuthenticationController(AuthenticationService authenticationService) {
     this.authenticationService = authenticationService;
-    this.authenticationManager = authenticationManager;
-    this.jwtService = jwtService;
   }
 
   @PostMapping("/register")
-  public ResponseEntity<Void> register(@Valid @RequestBody UserRegisterDTO userRegisterDTO) {
-    try {
-      authenticationService.register(userRegisterDTO);
-      return new ResponseEntity<>(HttpStatus.CREATED);
-    } catch (Exception e) {
-      System.err.println("Error in user registration");
-      System.err.println(e.getMessage());
-      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+  public ResponseEntity<Void> register(@Valid @RequestBody UserRegisterDTO userRegisterDTO)
+      throws AuthenticationException {
+    authenticationService.signup(userRegisterDTO);
+    return new ResponseEntity<>(HttpStatus.CREATED);
   }
 
   @PostMapping("/login")
-  public String login(@Valid @RequestBody UserLoginDTO userLoginDTO) {
-    try {
-      Authentication authenticationToken =
-          new UsernamePasswordAuthenticationToken(
-              userLoginDTO.getUsername(), userLoginDTO.getPassword());
-      Authentication authentication = authenticationManager.authenticate(authenticationToken);
+  public ResponseEntity<JwtResponseDto> login(@Valid @RequestBody UserLoginDTO userLoginDTO)
+      throws Exception {
+    JwtResponseDto responseDto = authenticationService.authenticate(userLoginDTO);
+    return new ResponseEntity<>(responseDto, HttpStatus.OK);
+  }
 
-      if (authentication.isAuthenticated())
-        return jwtService.generateToken(userLoginDTO.getUsername());
+  @PostMapping("/refresh-token")
+  public ResponseEntity<JwtResponseDto> refreshToken(
+      @Valid @RequestBody RefreshTokenRequestDto tokenRequestDto,
+      @CookieValue("X-REFRESH-TOKEN") String refreshToken)
+      throws Exception {
+    JwtResponseDto responseDto =
+        authenticationService.newJwt(refreshToken, tokenRequestDto.getDeviceName());
+    return new ResponseEntity<>(responseDto, HttpStatus.OK);
+  }
 
-      return "Failed";
-    } catch (Exception e) {
-      System.err.println("Exception while trying to log in...");
-      System.err.println(e.getMessage());
-      return "Error";
-    }
+  @GetMapping("/me")
+  public String userSpecificDeets() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+
+    return userPrincipal.getUsername();
   }
 }

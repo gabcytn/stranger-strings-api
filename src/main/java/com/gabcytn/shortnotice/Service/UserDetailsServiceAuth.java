@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gabcytn.shortnotice.DAO.RedisCacheDao;
-import com.gabcytn.shortnotice.DAO.UserDAO;
+import com.gabcytn.shortnotice.DAO.UserDao;
 import com.gabcytn.shortnotice.DTO.CacheData;
 import com.gabcytn.shortnotice.DTO.UserPrincipal;
 import com.gabcytn.shortnotice.Entity.User;
@@ -16,12 +16,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class UserDetailsServiceAuth implements UserDetailsService {
-  private final UserDAO userDAO;
+  private final UserDao userDAO;
   private final RedisCacheDao redisCacheDao;
   private final ObjectMapper objectMapper;
 
   public UserDetailsServiceAuth(
-      UserDAO userDAO, RedisCacheDao redisCacheDao, ObjectMapper objectMapper) {
+          UserDao userDAO, RedisCacheDao redisCacheDao, ObjectMapper objectMapper) {
     this.userDAO = userDAO;
     this.redisCacheDao = redisCacheDao;
     this.objectMapper = objectMapper;

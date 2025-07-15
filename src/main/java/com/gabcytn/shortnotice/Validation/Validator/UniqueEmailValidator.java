@@ -1,14 +1,14 @@
 package com.gabcytn.shortnotice.Validation.Validator;
 
-import com.gabcytn.shortnotice.DAO.UserDAO;
+import com.gabcytn.shortnotice.DAO.UserDao;
 import com.gabcytn.shortnotice.Validation.UniqueEmail;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 public class UniqueEmailValidator implements ConstraintValidator<UniqueEmail, String> {
-  private final UserDAO userDAO;
+  private final UserDao userDAO;
 
-  public UniqueEmailValidator(UserDAO userDAO) {
+  public UniqueEmailValidator(UserDao userDAO) {
     this.userDAO = userDAO;
   }
 

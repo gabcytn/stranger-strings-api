@@ -8,7 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 @PasswordsMatch
-public class UserRegisterDTO {
+public class RegisterRequestDto
+{
   @NotNull(message = "Email is required.")
   @Email
   @UniqueEmail(message = "Email already taken.")
@@ -26,7 +27,7 @@ public class UserRegisterDTO {
   @NotNull(message = "Confirm password is required.")
   private String confirmPassword;
 
-  public UserRegisterDTO(String email, String username, String password, String confirmPassword) {
+  public RegisterRequestDto(String email, String username, String password, String confirmPassword) {
     this.email = email;
     this.username = username;
     this.password = password;

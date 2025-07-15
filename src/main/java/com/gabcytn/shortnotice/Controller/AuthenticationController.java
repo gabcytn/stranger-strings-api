@@ -18,16 +18,16 @@ public class AuthenticationController {
   }
 
   @PostMapping("/register")
-  public ResponseEntity<Void> register(@Valid @RequestBody UserRegisterDTO userRegisterDTO)
+  public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequestDto registerRequestDto)
       throws AuthenticationException {
-    authenticationService.signup(userRegisterDTO);
+    authenticationService.signup(registerRequestDto);
     return new ResponseEntity<>(HttpStatus.CREATED);
   }
 
   @PostMapping("/login")
-  public ResponseEntity<JwtResponseDto> login(@Valid @RequestBody UserLoginDTO userLoginDTO)
+  public ResponseEntity<JwtResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto)
       throws Exception {
-    JwtResponseDto responseDto = authenticationService.authenticate(userLoginDTO);
+    JwtResponseDto responseDto = authenticationService.authenticate(loginRequestDto);
     return new ResponseEntity<>(responseDto, HttpStatus.OK);
   }
 

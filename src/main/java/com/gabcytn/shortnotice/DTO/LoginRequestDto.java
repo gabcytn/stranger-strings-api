@@ -3,7 +3,8 @@ package com.gabcytn.shortnotice.DTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public class UserLoginDTO {
+public class LoginRequestDto
+{
   @NotNull(message = "Username is required.")
   @NotBlank(message = "Username must not be blank")
   private String username;
@@ -16,7 +17,7 @@ public class UserLoginDTO {
   @NotBlank(message = "Device name must not be blank")
   private String deviceName;
 
-  public UserLoginDTO(String username, String password, String deviceName) {
+  public LoginRequestDto(String username, String password, String deviceName) {
     this.username = username;
     this.password = password;
     this.deviceName = deviceName;

@@ -7,7 +7,7 @@ import com.gabcytn.shortnotice.Entity.User;
 import com.gabcytn.shortnotice.Exception.AuthenticationException;
 import com.gabcytn.shortnotice.Exception.RefreshTokenException;
 import com.gabcytn.shortnotice.DAO.RedisCacheDao;
-import com.gabcytn.shortnotice.DAO.UserDAO;
+import com.gabcytn.shortnotice.DAO.UserDao;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthenticationService {
-  private final UserDAO userRepository;
+  private final UserDao userDao;
   private final PasswordEncoder passwordEncoder;
   private final AuthenticationManager authenticationManager;
   private final JwtService jwtService;
@@ -31,14 +31,14 @@ public class AuthenticationService {
   private final Long oneWeek = 60L * 60 * 24 * 7;
 
   public AuthenticationService(
-          UserDAO userDAO,
+          UserDao userDao,
           PasswordEncoder passwordEncoder,
           AuthenticationManager authenticationManager,
           JwtService jwtService,
           RedisCacheDao redisCacheDao,
           ObjectMapper objectMapper, HttpServletRequest request,
           HttpServletResponse response) {
-    this.userRepository = userDAO;
+    this.userDao = userDao;
     this.passwordEncoder = passwordEncoder;
     this.authenticationManager = authenticationManager;
     this.jwtService = jwtService;
@@ -48,14 +48,14 @@ public class AuthenticationService {
     this.response = response;
   }
 
-  public void signup(UserRegisterDTO user) throws AuthenticationException {
+  public void signup(RegisterRequestDto user) throws AuthenticationException {
     try {
       User userToSave = new User();
       userToSave.setEmail(user.getEmail());
       userToSave.setUsername(user.getUsername());
       userToSave.setPassword(passwordEncoder.encode(user.getPassword()));
 
-      userRepository.save(userToSave);
+      userDao.save(userToSave);
     } catch (Exception e) {
       System.err.println("Error signing up user: " + user.getEmail());
       System.err.println(e.getMessage());
@@ -64,7 +64,7 @@ public class AuthenticationService {
     }
   }
 
-  public JwtResponseDto authenticate(UserLoginDTO user)
+  public JwtResponseDto authenticate(LoginRequestDto user)
           throws Exception{
     Authentication authToken =
             new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());

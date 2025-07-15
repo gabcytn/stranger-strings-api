@@ -6,8 +6,6 @@ import com.gabcytn.shortnotice.Service.AuthenticationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -41,13 +39,5 @@ public class AuthenticationController {
     JwtResponseDto responseDto =
         authenticationService.newJwt(refreshToken, tokenRequestDto.getDeviceName());
     return new ResponseEntity<>(responseDto, HttpStatus.OK);
-  }
-
-  @GetMapping("/me")
-  public String userSpecificDeets() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-
-    return userPrincipal.getUsername();
   }
 }

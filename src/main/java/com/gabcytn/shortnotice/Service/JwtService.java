@@ -1,7 +1,7 @@
 package com.gabcytn.shortnotice.Service;
 
-import com.gabcytn.shortnotice.DTO.CacheData;
 import com.gabcytn.shortnotice.DAO.RedisCacheDao;
+import com.gabcytn.shortnotice.DTO.CacheData;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
   private final RedisCacheDao redisCacheDao;
+  private final HttpServletResponse response;
 
   @Value("${security.jwt.secret-key}")
   private String secretKey;
@@ -32,8 +33,9 @@ public class JwtService {
   @Value("${security.jwt.expiration-time}")
   private long jwtExpiration;
 
-  public JwtService(RedisCacheDao redisCacheDao) {
+  public JwtService(RedisCacheDao redisCacheDao, HttpServletResponse response) {
     this.redisCacheDao = redisCacheDao;
+    this.response = response;
   }
 
   public String extractUsername(String token) {
@@ -59,12 +61,12 @@ public class JwtService {
 
   private String buildToken(Map<String, Object> extraClaims, String username, long expiration) {
     return Jwts.builder()
-            .claims(extraClaims)
-            .subject(username)
-            .issuedAt(new Date(System.currentTimeMillis()))
-            .expiration(new Date(System.currentTimeMillis() + expiration))
-            .signWith(getSignInKey())
-            .compact();
+        .claims(extraClaims)
+        .subject(username)
+        .issuedAt(new Date(System.currentTimeMillis()))
+        .expiration(new Date(System.currentTimeMillis() + expiration))
+        .signWith(getSignInKey())
+        .compact();
   }
 
   public boolean isTokenValid(String token, UserDetails userDetails) {
@@ -89,8 +91,7 @@ public class JwtService {
     return Keys.hmacShaKeyFor(keyBytes);
   }
 
-  public void generateRefreshToken(
-          HttpServletResponse response, String tokenValidatorAsString, Long expiration) {
+  public void generateRefreshToken(String tokenValidatorAsString, Long expiration) {
     String refreshToken = hashString(generateRandomString());
     Cookie cookie = new Cookie("X-REFRESH-TOKEN", refreshToken);
     cookie.setHttpOnly(true);

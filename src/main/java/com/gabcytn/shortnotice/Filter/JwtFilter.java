@@ -1,4 +1,4 @@
-package com.gabcytn.shortnotice.Config;
+package com.gabcytn.shortnotice.Filter;
 
 import com.gabcytn.shortnotice.Service.JwtService;
 import com.gabcytn.shortnotice.Service.UserDetailsServiceAuth;

@@ -1,5 +1,6 @@
 package com.gabcytn.shortnotice.Config;
 
+import com.gabcytn.shortnotice.Filter.JwtFilter;
 import com.gabcytn.shortnotice.Service.UserDetailsServiceAuth;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

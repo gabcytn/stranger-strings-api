@@ -10,6 +10,7 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -84,6 +85,11 @@ public class GlobalExceptionHandler {
       errorDetail =
           ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, "Validation failed.");
       errorDetail.setProperty("description", errors);
+    }
+
+    if (exception instanceof HttpMessageNotReadableException) {
+      errorDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
+      errorDetail.setProperty("description", "Include a request body.");
     }
 
     if (errorDetail == null) {

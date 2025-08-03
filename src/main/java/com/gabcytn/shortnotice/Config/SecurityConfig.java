@@ -50,7 +50,7 @@ public class SecurityConfig {
 
     httpSecurity.authorizeHttpRequests(
         request -> {
-          request.requestMatchers("/auth/**").permitAll().anyRequest().authenticated();
+          request.requestMatchers("/auth/**", "/short-notice").permitAll().anyRequest().authenticated();
         });
 
     // stateless session management

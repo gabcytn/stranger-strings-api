@@ -13,12 +13,14 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
 @EnableRedisRepositories("com.gabcytn.shortnotice.DAO")
 public class RedisCacheConfig {
   @Bean
+  @Primary
   public LettuceConnectionFactory lettuceConnectionFactory() {
     RedisProperties properties = redisProperties();
     RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
 
     configuration.setHostName(properties.getHost());
     configuration.setPort(properties.getPort());
+    configuration.setDatabase(0);
 
     return new LettuceConnectionFactory(configuration);
   }

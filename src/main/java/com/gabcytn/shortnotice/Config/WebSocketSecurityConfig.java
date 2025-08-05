@@ -39,6 +39,8 @@ public class WebSocketSecurityConfig {
         .build();
   }
 
+  // NOTE: this 'temporarily' turns off CSRF for CONNECT STOMP frames as there's no support for it
+  // source: https://stackoverflow.com/a/77025523/28779183
   @Order(Ordered.HIGHEST_PRECEDENCE)
   @Bean
   public ChannelInterceptor csrfChannelInterceptor() {

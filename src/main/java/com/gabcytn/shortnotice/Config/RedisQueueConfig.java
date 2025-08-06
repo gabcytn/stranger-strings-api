@@ -54,9 +54,7 @@ public class RedisQueueConfig {
 
     template.setConnectionFactory(lettuceConnectionFactory);
     template.setKeySerializer(StringRedisSerializer.UTF_8);
-    template.setValueSerializer(
-        new Jackson2JsonRedisSerializer<>(
-            new TypeReference<Map<String, List<String>>>() {}.getClass()));
+    template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
     template.afterPropertiesSet();
 
     return template;

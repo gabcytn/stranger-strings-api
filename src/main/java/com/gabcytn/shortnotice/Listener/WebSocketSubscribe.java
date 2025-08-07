@@ -21,14 +21,20 @@ public class WebSocketSubscribe {
   @EventListener
   public void handleWebSocketSubscribeEvent(SessionSubscribeEvent event) {
     SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
-    String destination = headerAccessor.getDestination();
+    String initialDestination = headerAccessor.getDestination();
 
-    LOG.info("Destination: {}", destination);
-    assert destination != null;
+    LOG.info("Destination: {}", initialDestination);
+    assert initialDestination != null;
 
-    String name = Objects.requireNonNull(headerAccessor.getUser()).getName();
+		assert event.getUser() != null;
+		String name = event.getUser().getName();
     LOG.info("Send to user name: {}", name);
+
+    String destination = initialDestination;
+    if (destination.startsWith("/user/")) {
+      destination = destination.substring(5);
+    }
     simpMessagingTemplate.convertAndSendToUser(
-        name, "/topic/anonymous/queue", "Successfully subscribed to: " + destination);
+        name, destination, "Successfully subscribed to: " + initialDestination);
   }
 }

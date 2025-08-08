@@ -54,7 +54,6 @@ public class AnonymousMessagingService {
     }
 
     if (!hasMatch && !interestsWithoutMatches.isEmpty()) {
-      LOG.warn("HERE BEFORE ERRORS");
       placeUserInInterestsSet(interestsWithoutMatches, simpSessionId);
       LOG.info("No match found for interests: {}", interestsWithoutMatches);
     }

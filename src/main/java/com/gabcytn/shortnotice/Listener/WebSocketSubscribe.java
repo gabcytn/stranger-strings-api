@@ -1,6 +1,5 @@
 package com.gabcytn.shortnotice.Listener;
 
-import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -26,8 +25,8 @@ public class WebSocketSubscribe {
     LOG.info("Destination: {}", initialDestination);
     assert initialDestination != null;
 
-		assert event.getUser() != null;
-		String name = event.getUser().getName();
+    assert event.getUser() != null;
+    String name = event.getUser().getName();
     LOG.info("Send to user name: {}", name);
 
     String destination = initialDestination;

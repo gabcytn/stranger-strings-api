@@ -6,30 +6,23 @@ import com.gabcytn.shortnotice.Entity.Conversation;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.SetOperations;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AnonymousMessagingService {
   private static final Logger LOG = LoggerFactory.getLogger(AnonymousMessagingService.class);
-  private static String USERS_TO_INTERESTS_MAP_REDIS_KEY;
-  private final SetOperations<String, Object> setOperations;
-  private final RedisTemplate<String, Map<String, List<String>>> redisUsersInterestsMapTemplate;
   private final ConversationDao conversationDao;
-  private final ChatQueueService chatQueueService;
+  private final RedisQueueService redisQueueService;
+  private final SimpMessagingTemplate simpMessagingTemplate;
 
   public AnonymousMessagingService(
-      @Qualifier("redisQueueTemplate") RedisTemplate<String, Object> redisQueueTemplate,
-      @Qualifier("redisUsersInterestsMapTemplate") RedisTemplate<String, Map<String, List<String>>> mapRedisTemplate,
       ConversationDao conversationDao,
-      ChatQueueService chatQueueService) {
+      RedisQueueService redisQueueService,
+      SimpMessagingTemplate simpMessagingTemplate) {
     this.conversationDao = conversationDao;
-    this.chatQueueService = chatQueueService;
-    this.redisUsersInterestsMapTemplate = mapRedisTemplate;
-    this.setOperations = redisQueueTemplate.opsForSet();
+    this.redisQueueService = redisQueueService;
+    this.simpMessagingTemplate = simpMessagingTemplate;
   }
 
   public void queue(ChatInitiationDto chatInitiationDto, String simpSessionId) {
@@ -40,44 +33,32 @@ public class AnonymousMessagingService {
     List<String> interestsWithoutMatches = new ArrayList<>();
     for (String interest : chatInitiationDto.getInterests()) {
       // queue for current interest does not exist
-      if (interestQueueIsEmpty(interest)) {
+      if (redisQueueService.interestQueueIsEmpty(interest)) {
         interestsWithoutMatches.add(interest);
         continue;
       }
 
-      String matchedSessionId = (String) setOperations.randomMember(interest);
-      chatQueueService.match(
-          List.of(simpSessionId, matchedSessionId), conversationDao.save(new Conversation()));
+      String matchedSessionId = redisQueueService.getRandomMemberFromInterest(interest);
+      match(List.of(simpSessionId, matchedSessionId), conversationDao.save(new Conversation()));
       hasMatch = true;
       LOG.info("Match found: {}, {}; Interest: {}", simpSessionId, matchedSessionId, interest);
       break;
     }
 
     if (!hasMatch && !interestsWithoutMatches.isEmpty()) {
-      placeUserInInterestsSet(interestsWithoutMatches, simpSessionId);
+      redisQueueService.placeUserInInterestsSet(interestsWithoutMatches, simpSessionId);
       LOG.info("No match found for interests: {}", interestsWithoutMatches);
     }
   }
 
-  private boolean interestQueueIsEmpty(String interest) {
-    Set<Object> interestsSet = setOperations.members(interest);
-    assert interestsSet != null;
-    return interestsSet.isEmpty();
-  }
-
-  private void placeUserInInterestsSet(List<String> interestsWithoutMatches, String sessionId) {
-    for (String interest : interestsWithoutMatches) {
-      setOperations.add(interest, sessionId);
+  private void match(List<String> sessionIds, Conversation conversation) {
+    for (String sessionId : sessionIds) {
+      redisQueueService.removeUserFromInterests(sessionId);
+      simpMessagingTemplate.convertAndSendToUser(
+              sessionId,
+              "/topic/anonymous/queue",
+              "This is your conversation id: " + conversation.getId());
     }
-    Map<String, List<String>> map = redisUsersInterestsMapTemplate.opsForValue().get(USERS_TO_INTERESTS_MAP_REDIS_KEY);
-		assert map != null;
-		map.put(sessionId, interestsWithoutMatches);
-    redisUsersInterestsMapTemplate.opsForValue().set(USERS_TO_INTERESTS_MAP_REDIS_KEY, map);
+    LOG.info("Successfully matched {} users.", sessionIds.size());
   }
-
-  @Value("${spring.data.redis.users-interests-map}")
-  public void setUsersToInterestsMapRedisKey(String key) {
-    USERS_TO_INTERESTS_MAP_REDIS_KEY = key;
-  }
-
 }

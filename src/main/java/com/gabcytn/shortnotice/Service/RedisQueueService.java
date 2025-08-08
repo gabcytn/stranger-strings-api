@@ -1,9 +1,7 @@
 package com.gabcytn.shortnotice.Service;
 
 import com.gabcytn.shortnotice.Entity.Conversation;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,15 +11,15 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ChatQueueService {
-  private static final Logger LOG = LoggerFactory.getLogger(ChatQueueService.class);
+public class RedisQueueService {
+  private static final Logger LOG = LoggerFactory.getLogger(RedisQueueService.class);
   private static String USERS_TO_INTERESTS_MAP_REDIS_KEY;
 
   private final RedisTemplate<String, Object> redisTemplate;
   private final RedisTemplate<String, Map<String, List<String>>> redisUsersInterestsMapTemplate;
   private final SimpMessagingTemplate simpMessagingTemplate;
 
-  public ChatQueueService(
+  public RedisQueueService(
       @Qualifier("redisQueueTemplate") RedisTemplate<String, Object> redisTemplate,
       @Qualifier("redisUsersInterestsMapTemplate")
           RedisTemplate<String, Map<String, List<String>>> redisUsersInterestsMapTemplate,
@@ -31,18 +29,28 @@ public class ChatQueueService {
     this.simpMessagingTemplate = simpMessagingTemplate;
   }
 
-  void match(List<Object> sessionIds, Conversation conversation) {
-    for (Object sessionId : sessionIds) {
-      removeUserFromInterests((String) sessionId);
-      simpMessagingTemplate.convertAndSendToUser(
-          (String) sessionId,
-          "/topic/anonymous/queue",
-          "This is your conversation id: " + conversation.getId());
-    }
-    LOG.info("Successfully matched {} users.", sessionIds.size());
+
+  public boolean interestQueueIsEmpty(String interest) {
+    Set<Object> interestsSet = redisTemplate.opsForSet().members(interest);
+    assert interestsSet != null;
+    return interestsSet.isEmpty();
   }
 
-  private void removeUserFromInterests(String sessionId) {
+  public void placeUserInInterestsSet(List<String> interestsWithoutMatches, String sessionId) {
+    for (String interest : interestsWithoutMatches) {
+      redisTemplate.opsForSet().add(interest, sessionId);
+    }
+    Map<String, List<String>> map = getUserInterestsListMap();
+    assert map != null;
+    map.put(sessionId, interestsWithoutMatches);
+    setUserInterestsListMap(map);
+  }
+
+  public String getRandomMemberFromInterest(String interest) {
+    return (String) redisTemplate.opsForSet().randomMember(interest);
+  }
+
+  public void removeUserFromInterests(String sessionId) {
     try {
       Map<String, List<String>> interestsMap =
           redisUsersInterestsMapTemplate.opsForValue().get(USERS_TO_INTERESTS_MAP_REDIS_KEY);
@@ -52,9 +60,10 @@ public class ChatQueueService {
         // remove user from all their interests set
         interestsList.forEach(interest -> redisTemplate.opsForSet().remove(interest, sessionId));
         // remove user from usersInterestsMap
-        Map<String, List<String>> map = redisUsersInterestsMapTemplate.opsForValue().get(USERS_TO_INTERESTS_MAP_REDIS_KEY);
-				assert map != null;
-				map.remove(sessionId);
+        Map<String, List<String>> map =
+            redisUsersInterestsMapTemplate.opsForValue().get(USERS_TO_INTERESTS_MAP_REDIS_KEY);
+        assert map != null;
+        map.remove(sessionId);
         redisUsersInterestsMapTemplate.opsForValue().set(USERS_TO_INTERESTS_MAP_REDIS_KEY, map);
       }
     } catch (Exception e) {
@@ -62,6 +71,18 @@ public class ChatQueueService {
       LOG.error(e.getMessage());
       LOG.error(Arrays.toString(e.getStackTrace()));
     }
+  }
+
+  private Map<String, List<String>> getUserInterestsListMap() {
+    return redisUsersInterestsMapTemplate.opsForValue().get(USERS_TO_INTERESTS_MAP_REDIS_KEY);
+  }
+
+  private void setUserInterestsListMap(Map<String, List<String>> map) {
+    redisUsersInterestsMapTemplate.opsForValue().set(USERS_TO_INTERESTS_MAP_REDIS_KEY, map);
+  }
+
+  private void placeInConversationMembers(Conversation conversation, Set<UUID> members) {
+    // TODO: persist conversation with members
   }
 
   @Value("${spring.data.redis.users-interests-map}")

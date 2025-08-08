@@ -21,9 +21,9 @@ public class WebSocketSecurityConfig {
     return messages
         .simpDestMatchers("/app/anonymous/**")
         .permitAll()
-        .simpSubscribeDestMatchers("/topic/anonymous/**", "/errors/**")
+        .simpSubscribeDestMatchers("/topic/anonymous/**")
         .permitAll()
-        .simpMessageDestMatchers("/topic/anonymous/**", "/errors/**")
+        .simpMessageDestMatchers("/topic/anonymous/**")
         .permitAll()
         .simpTypeMatchers(
             SimpMessageType.CONNECT_ACK,

@@ -50,6 +50,6 @@ public class AnonymousMessagingController {
     response.setError(MethodArgumentNotValidException.class.toString());
     response.setDescription(errorMessage);
     simpMessagingTemplate.convertAndSendToUser(
-        principal.getName(), "/errors", response);
+        principal.getName(), "/topic/errors", response);
   }
 }

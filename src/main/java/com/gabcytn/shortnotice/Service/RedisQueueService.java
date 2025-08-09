@@ -2,6 +2,8 @@ package com.gabcytn.shortnotice.Service;
 
 import com.gabcytn.shortnotice.Entity.Conversation;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -81,6 +83,8 @@ public class RedisQueueService {
         member -> {
           redisTemplate.opsForSet().add(conversation.getId().toString(), member);
         });
+    // expire all anonymous conversations in 1 day
+    redisTemplate.expire(conversation.getId().toString(), 1, TimeUnit.DAYS);
   }
 
   @Value("${spring.data.redis.users-interests-map}")

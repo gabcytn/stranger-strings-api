@@ -2,6 +2,7 @@ package com.gabcytn.shortnotice.Service;
 
 import com.gabcytn.shortnotice.DAO.ConversationDao;
 import com.gabcytn.shortnotice.DTO.ChatInitiationDto;
+import com.gabcytn.shortnotice.DTO.StompSendPayload;
 import com.gabcytn.shortnotice.Entity.Conversation;
 import java.util.*;
 import org.slf4j.Logger;
@@ -52,6 +53,15 @@ public class AnonymousMessagingService {
       redisQueueService.placeUserInInterestsSet(interestsWithoutMatches, simpSessionId);
       LOG.info("No match found for interests: {}", interestsWithoutMatches);
     }
+  }
+
+  public void message(StompSendPayload payload, UUID senderId) {
+    Set<Object> members = redisQueueService.getConversationMembers(payload.getConversationId());
+    members.forEach(member -> {
+      if (!senderId.toString().equals(member.toString())) {
+        simpMessagingTemplate.convertAndSendToUser(member.toString(), "/topic/anonymous/queue", payload.getMessage());
+      }
+    });
   }
 
   private void match(Conversation conversation, List<String> sessionIds) {

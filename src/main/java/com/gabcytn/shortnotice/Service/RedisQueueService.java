@@ -70,6 +70,16 @@ public class RedisQueueService {
     }
   }
 
+  public Boolean isMemberOfConversation(UUID userId, UUID conversationId) {
+    Set<Object> conversationMembers = redisTemplate.opsForSet().members(conversationId.toString());
+    assert conversationMembers != null;
+		return conversationMembers.contains(userId.toString());
+  }
+
+  public Set<Object> getConversationMembers(UUID conversationId) {
+    return redisTemplate.opsForSet().members(conversationId.toString());
+  }
+
   private Map<String, List<String>> getUserInterestsListMap() {
     return redisUsersInterestsMapTemplate.opsForValue().get(USERS_TO_INTERESTS_MAP_REDIS_KEY);
   }

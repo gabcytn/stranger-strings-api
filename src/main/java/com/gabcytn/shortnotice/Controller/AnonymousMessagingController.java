@@ -1,10 +1,12 @@
 package com.gabcytn.shortnotice.Controller;
 
 import com.gabcytn.shortnotice.DTO.ChatInitiationDto;
+import com.gabcytn.shortnotice.DTO.StompSendPayload;
 import com.gabcytn.shortnotice.DTO.WebSocketErrorResponse;
 import com.gabcytn.shortnotice.Service.AnonymousMessagingService;
 import jakarta.validation.Valid;
 import java.security.Principal;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,11 @@ public class AnonymousMessagingController {
   @MessageMapping("/queue")
   void queue(@RequestBody @Valid ChatInitiationDto chatInitiationDto, Principal principal) {
     anonymousMessagingService.queue(chatInitiationDto, principal.getName());
+  }
+
+  @MessageMapping("/message")
+  public void message(@RequestBody @Valid StompSendPayload payload, Principal principal) {
+    anonymousMessagingService.message(payload, UUID.fromString(principal.getName()));
   }
 
   // error handler for input validation in websockets

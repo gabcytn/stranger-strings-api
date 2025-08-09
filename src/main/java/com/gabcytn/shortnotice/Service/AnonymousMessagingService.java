@@ -39,7 +39,10 @@ public class AnonymousMessagingService {
       }
 
       String matchedSessionId = redisQueueService.getRandomMemberFromInterest(interest);
-      match(List.of(simpSessionId, matchedSessionId), conversationDao.save(new Conversation()));
+      Conversation conversation = createAndSaveNewConversation();
+      List<String> conversationMembers = List.of(simpSessionId, matchedSessionId);
+      redisQueueService.placeInConversationMembers(conversation, conversationMembers);
+      match(conversation, conversationMembers);
       hasMatch = true;
       LOG.info("Match found: {}, {}; Interest: {}", simpSessionId, matchedSessionId, interest);
       break;
@@ -51,7 +54,7 @@ public class AnonymousMessagingService {
     }
   }
 
-  private void match(List<String> sessionIds, Conversation conversation) {
+  private void match(Conversation conversation, List<String> sessionIds) {
     for (String sessionId : sessionIds) {
       redisQueueService.removeUserFromInterests(sessionId);
       simpMessagingTemplate.convertAndSendToUser(
@@ -60,5 +63,10 @@ public class AnonymousMessagingService {
               "This is your conversation id: " + conversation.getId());
     }
     LOG.info("Successfully matched {} users.", sessionIds.size());
+  }
+
+  private Conversation createAndSaveNewConversation() {
+    Conversation conversation = new Conversation();
+    return conversationDao.save(conversation);
   }
 }

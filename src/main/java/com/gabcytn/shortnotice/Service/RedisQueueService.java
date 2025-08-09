@@ -29,7 +29,6 @@ public class RedisQueueService {
     this.simpMessagingTemplate = simpMessagingTemplate;
   }
 
-
   public boolean interestQueueIsEmpty(String interest) {
     Set<Object> interestsSet = redisTemplate.opsForSet().members(interest);
     assert interestsSet != null;
@@ -52,19 +51,15 @@ public class RedisQueueService {
 
   public void removeUserFromInterests(String sessionId) {
     try {
-      Map<String, List<String>> interestsMap =
-          redisUsersInterestsMapTemplate.opsForValue().get(USERS_TO_INTERESTS_MAP_REDIS_KEY);
+      Map<String, List<String>> interestsMap = getUserInterestsListMap();
       assert interestsMap != null;
       List<String> interestsList = interestsMap.get(sessionId);
       if (interestsList != null && !interestsList.isEmpty()) {
         // remove user from all their interests set
         interestsList.forEach(interest -> redisTemplate.opsForSet().remove(interest, sessionId));
         // remove user from usersInterestsMap
-        Map<String, List<String>> map =
-            redisUsersInterestsMapTemplate.opsForValue().get(USERS_TO_INTERESTS_MAP_REDIS_KEY);
-        assert map != null;
-        map.remove(sessionId);
-        redisUsersInterestsMapTemplate.opsForValue().set(USERS_TO_INTERESTS_MAP_REDIS_KEY, map);
+        interestsMap.remove(sessionId);
+        setUserInterestsListMap(interestsMap);
       }
     } catch (Exception e) {
       LOG.error("Error removing user from interests set");
@@ -81,8 +76,11 @@ public class RedisQueueService {
     redisUsersInterestsMapTemplate.opsForValue().set(USERS_TO_INTERESTS_MAP_REDIS_KEY, map);
   }
 
-  private void placeInConversationMembers(Conversation conversation, Set<UUID> members) {
-    // TODO: persist conversation with members
+  public void placeInConversationMembers(Conversation conversation, List<String> members) {
+    members.forEach(
+        member -> {
+          redisTemplate.opsForSet().add(conversation.getId().toString(), member);
+        });
   }
 
   @Value("${spring.data.redis.users-interests-map}")

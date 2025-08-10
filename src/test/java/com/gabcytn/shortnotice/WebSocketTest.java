@@ -18,7 +18,7 @@ public class WebSocketTest {
   @LocalServerPort private Integer port;
 
   @Test
-  void testReceivedMessageOnSubscribe() throws InterruptedException, ExecutionException {
+  void testReceivedMessageOnSubscribe() throws InterruptedException {
     WebSocketClient webSocketClient = new StandardWebSocketClient();
     WebSocketStompClient stompClient = new WebSocketStompClient(webSocketClient);
     stompClient.setMessageConverter(new StringMessageConverter());
@@ -28,7 +28,7 @@ public class WebSocketTest {
     String destination = "/user/topic/anonymous/queue";
     StompSessionHandler stompSessionHandler =
         new MyStompSessionHandler(destination, latch, receivedMessage);
-    stompClient.connectAsync(getWsPath(), stompSessionHandler).get();
+    stompClient.connectAsync(getWsPath(), stompSessionHandler);
 
     boolean isMessageReceived = latch.await(1, TimeUnit.SECONDS);
     Assertions.assertTrue(isMessageReceived);

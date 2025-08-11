@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -34,12 +35,12 @@ public class WebSocketTest {
   @LocalServerPort private Integer port;
 
   public WebSocketTest(
+      @Value("${spring.data.redis.users-interests-map}") String key,
       @Qualifier("redisUsersInterestsMapTemplate")
           RedisTemplate<String, Map<String, List<String>>> redisTemplate) {
     Map<String, List<String>> map = new HashMap<>();
     map.put("_init", List.of());
-    String KEY = "usersInterestsMap";
-    redisTemplate.opsForValue().set(KEY, map);
+    redisTemplate.opsForValue().set(key, map);
   }
 
   @BeforeEach

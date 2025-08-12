@@ -27,14 +27,14 @@ public class RedisQueueService {
   }
 
   public boolean interestQueueIsEmpty(String interest) {
-    Set<Object> interestsSet = redisTemplate.opsForSet().members(interest);
+    Set<Object> interestsSet = redisTemplate.opsForSet().members("interest:" + interest);
     assert interestsSet != null;
     return interestsSet.isEmpty();
   }
 
   public void placeUserInInterestsSet(List<String> interestsWithoutMatches, String sessionId) {
     for (String interest : interestsWithoutMatches) {
-      redisTemplate.opsForSet().add(interest, sessionId);
+      redisTemplate.opsForSet().add("interest:" + interest, sessionId);
     }
     Map<String, List<String>> map = getUserInterestsListMap();
     assert map != null;
@@ -43,7 +43,7 @@ public class RedisQueueService {
   }
 
   public String getRandomMemberFromInterest(String interest) {
-    return (String) redisTemplate.opsForSet().randomMember(interest);
+    return (String) redisTemplate.opsForSet().randomMember("interest:" + interest);
   }
 
   public void removeUserFromInterests(String sessionId) {
@@ -53,7 +53,7 @@ public class RedisQueueService {
       List<String> interestsList = interestsMap.get(sessionId);
       if (interestsList != null && !interestsList.isEmpty()) {
         // remove user from all their interests set
-        interestsList.forEach(interest -> redisTemplate.opsForSet().remove(interest, sessionId));
+        interestsList.forEach(interest -> redisTemplate.opsForSet().remove("interest:" + interest, sessionId));
         // remove user from usersInterestsMap
         interestsMap.remove(sessionId);
         setUserInterestsListMap(interestsMap);
@@ -66,13 +66,13 @@ public class RedisQueueService {
   }
 
   public Boolean isMemberOfConversation(UUID userId, UUID conversationId) {
-    Set<Object> conversationMembers = redisTemplate.opsForSet().members(conversationId.toString());
+    Set<Object> conversationMembers = redisTemplate.opsForSet().members("members:" + conversationId.toString());
     assert conversationMembers != null;
     return conversationMembers.contains(userId.toString());
   }
 
   public Set<Object> getConversationMembers(UUID conversationId) {
-    return redisTemplate.opsForSet().members(conversationId.toString());
+    return redisTemplate.opsForSet().members("members:" + conversationId.toString());
   }
 
   private Map<String, List<String>> getUserInterestsListMap() {
@@ -86,7 +86,7 @@ public class RedisQueueService {
   public void placeInConversationMembers(Conversation conversation, List<String> members) {
     members.forEach(
         member -> {
-          redisTemplate.opsForSet().add(conversation.getId().toString(), member);
+          redisTemplate.opsForSet().add("members:" + conversation.getId().toString(), member);
         });
     // expire all anonymous conversations in 1 day
     redisTemplate.expire(conversation.getId().toString(), 1, TimeUnit.DAYS);

@@ -3,13 +3,11 @@ package com.gabcytn.shortnotice.Service;
 import com.gabcytn.shortnotice.Entity.Conversation;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,16 +17,13 @@ public class RedisQueueService {
 
   private final RedisTemplate<String, Object> redisTemplate;
   private final RedisTemplate<String, Map<String, List<String>>> redisUsersInterestsMapTemplate;
-  private final SimpMessagingTemplate simpMessagingTemplate;
 
   public RedisQueueService(
       @Qualifier("redisQueueTemplate") RedisTemplate<String, Object> redisTemplate,
       @Qualifier("redisUsersInterestsMapTemplate")
-          RedisTemplate<String, Map<String, List<String>>> redisUsersInterestsMapTemplate,
-      SimpMessagingTemplate simpMessagingTemplate) {
+          RedisTemplate<String, Map<String, List<String>>> redisUsersInterestsMapTemplate) {
     this.redisTemplate = redisTemplate;
     this.redisUsersInterestsMapTemplate = redisUsersInterestsMapTemplate;
-    this.simpMessagingTemplate = simpMessagingTemplate;
   }
 
   public boolean interestQueueIsEmpty(String interest) {
@@ -73,7 +68,7 @@ public class RedisQueueService {
   public Boolean isMemberOfConversation(UUID userId, UUID conversationId) {
     Set<Object> conversationMembers = redisTemplate.opsForSet().members(conversationId.toString());
     assert conversationMembers != null;
-		return conversationMembers.contains(userId.toString());
+    return conversationMembers.contains(userId.toString());
   }
 
   public Set<Object> getConversationMembers(UUID conversationId) {

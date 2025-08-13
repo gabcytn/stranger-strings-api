@@ -23,7 +23,7 @@ public class AuthenticationTest {
   @Test
   public void registerWithoutRequestBody() throws Exception {
     mockMvc
-        .perform(post("/auth/register"))
+        .perform(post("/api/v1/auth/register"))
         .andDo(print())
         .andExpect(status().isUnprocessableEntity());
   }
@@ -32,7 +32,7 @@ public class AuthenticationTest {
   public void registerWithIncompleteRequestBody() throws Exception {
     String reqBody = getRegisterBody(false);
     mockMvc
-        .perform(post("/auth/register").contentType(MediaType.APPLICATION_JSON).content(reqBody))
+        .perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(reqBody))
         .andDo(print())
         .andExpect(status().isUnprocessableEntity());
   }
@@ -41,7 +41,7 @@ public class AuthenticationTest {
   public void registerWithCompleteRequestBody() throws Exception {
     String reqBody = getRegisterBody(true);
     mockMvc
-        .perform(post("/auth/register").contentType(MediaType.APPLICATION_JSON).content(reqBody))
+        .perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(reqBody))
         .andDo(print())
         .andExpect(status().isCreated());
   }

@@ -197,6 +197,6 @@ public class WebSocketTest {
   }
 
   private String getWsPath() {
-    return String.format("ws://localhost:%d/short-notice", port);
+    return String.format("ws://localhost:%d/ws/v1/stranger-strings", port);
   }
 }

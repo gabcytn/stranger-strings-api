@@ -50,7 +50,7 @@ public class SecurityConfig {
     httpSecurity.authorizeHttpRequests(
         request -> {
           request
-              .requestMatchers("/auth/**", "/short-notice")
+              .requestMatchers("/api/v1/auth/**", "/ws/v1/stranger-strings")
               .permitAll()
               .anyRequest()
               .authenticated();

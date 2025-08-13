@@ -18,7 +18,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry
-        .addEndpoint("/short-notice")
+        .addEndpoint("/ws/v1/stranger-strings")
         .setAllowedOriginPatterns("*")
         .setHandshakeHandler(new CustomHandshakeHandler());
   }

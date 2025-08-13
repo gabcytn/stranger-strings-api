@@ -9,6 +9,12 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+  private final CustomHandshakeHandler handshakeHandler;
+
+  public WebSocketConfig(CustomHandshakeHandler handshakeHandler) {
+    this.handshakeHandler = handshakeHandler;
+  }
+
   @Override
   public void configureMessageBroker(MessageBrokerRegistry registry) {
     registry.enableSimpleBroker("/topic");
@@ -20,6 +26,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     registry
         .addEndpoint("/ws/v1/stranger-strings")
         .setAllowedOriginPatterns("*")
-        .setHandshakeHandler(new CustomHandshakeHandler());
+        .setHandshakeHandler(handshakeHandler);
   }
 }

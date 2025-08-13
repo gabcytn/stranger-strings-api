@@ -11,7 +11,7 @@
 	<groupId>com.gabcytn</groupId>
 	<artifactId>shortnotice</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>shortnotice</name>
+	<name>strangerstrings</name>
 	<description>WebSocket API for messaging applications with authentication.</description>
 	<url/>
 	<licenses>

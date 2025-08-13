@@ -1,6 +1,7 @@
 package com.gabcytn.shortnotice.Service;
 
 import com.gabcytn.shortnotice.Entity.Conversation;
+import com.gabcytn.shortnotice.Model.RedisAnonymousMessage;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -53,7 +54,8 @@ public class RedisQueueService {
       List<String> interestsList = interestsMap.get(sessionId);
       if (interestsList != null && !interestsList.isEmpty()) {
         // remove user from all their interests set
-        interestsList.forEach(interest -> redisTemplate.opsForSet().remove("interest:" + interest, sessionId));
+        interestsList.forEach(
+            interest -> redisTemplate.opsForSet().remove("interest:" + interest, sessionId));
         // remove user from usersInterestsMap
         interestsMap.remove(sessionId);
         setUserInterestsListMap(interestsMap);
@@ -66,7 +68,8 @@ public class RedisQueueService {
   }
 
   public Boolean isMemberOfConversation(UUID userId, UUID conversationId) {
-    Set<Object> conversationMembers = redisTemplate.opsForSet().members("members:" + conversationId.toString());
+    Set<Object> conversationMembers =
+        redisTemplate.opsForSet().members("members:" + conversationId.toString());
     assert conversationMembers != null;
     return conversationMembers.contains(userId.toString());
   }
@@ -90,6 +93,16 @@ public class RedisQueueService {
         });
     // expire all anonymous conversations in 1 day
     redisTemplate.expire(conversation.getId().toString(), 1, TimeUnit.DAYS);
+  }
+
+  public void saveMessage(String body, UUID senderId, UUID conversationId) {
+    String key = "messages:" + conversationId.toString();
+    redisTemplate
+        .opsForList()
+        .rightPush(
+            key, RedisAnonymousMessage.of(senderId, body));
+    // persist for 7 days for security purposes
+    redisTemplate.expire(key, 7, TimeUnit.DAYS);
   }
 
   @Value("${spring.data.redis.users-interests-map}")

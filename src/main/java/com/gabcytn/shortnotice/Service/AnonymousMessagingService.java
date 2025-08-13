@@ -57,20 +57,23 @@ public class AnonymousMessagingService {
 
   public void message(StompSendPayload payload, UUID senderId) {
     Set<Object> members = redisQueueService.getConversationMembers(payload.getConversationId());
-    members.forEach(member -> {
-      if (!senderId.toString().equals(member.toString())) {
-        simpMessagingTemplate.convertAndSendToUser(member.toString(), "/topic/anonymous/queue", payload.getMessage());
-      }
-    });
+    redisQueueService.saveMessage(payload.getMessage(), senderId, payload.getConversationId());
+    members.forEach(
+        member -> {
+          if (!senderId.toString().equals(member.toString())) {
+            simpMessagingTemplate.convertAndSendToUser(
+                member.toString(), "/topic/anonymous/queue", payload.getMessage());
+          }
+        });
   }
 
   private void match(Conversation conversation, List<String> sessionIds) {
     for (String sessionId : sessionIds) {
       redisQueueService.removeUserFromInterests(sessionId);
       simpMessagingTemplate.convertAndSendToUser(
-              sessionId,
-              "/topic/anonymous/queue",
-              "This is your conversation id: " + conversation.getId());
+          sessionId,
+          "/topic/anonymous/queue",
+          "This is your conversation id: " + conversation.getId());
     }
     LOG.info("Successfully matched {} users.", sessionIds.size());
   }

@@ -32,14 +32,14 @@ public class CustomHandshakeHandler extends DefaultHandshakeHandler {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
     try {
-      if (authentication == null || !authentication.isAuthenticated()) throw new Exception();
+      if (authentication == null || !authentication.isAuthenticated()) throw new RuntimeException();
 
-      Optional<UUID> userId = getUserId(authentication);
-      LOG.info("Retrieved user id in handshake: {}", userId.orElseThrow());
-      return new StompPrincipal(userId.orElseThrow().toString());
-    } catch (Exception e) {
+      UUID userId = getUserId(authentication).orElseThrow(RuntimeException::new);
+      LOG.info("Retrieved user id in handshake: {}", userId);
+      return new StompPrincipal(userId);
+    } catch (RuntimeException e) {
       LOG.info("No retrieved user; user is anonymous");
-      return new StompPrincipal(UUID.randomUUID().toString());
+      return new StompPrincipal(UUID.randomUUID());
     }
   }
 

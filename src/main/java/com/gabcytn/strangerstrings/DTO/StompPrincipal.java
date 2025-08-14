@@ -1,12 +1,13 @@
 package com.gabcytn.strangerstrings.DTO;
 
 import java.security.Principal;
+import java.util.UUID;
 
 public class StompPrincipal implements Principal {
-  String name;
+  private final String name;
 
-  public StompPrincipal(String name) {
-    this.name = name;
+  public StompPrincipal(UUID identifier) {
+    this.name = identifier.toString();
   }
 
   @Override

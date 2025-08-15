@@ -87,12 +87,13 @@ public class RedisQueueService {
   }
 
   public void placeInConversationMembers(Conversation conversation, List<String> members) {
+    String key = "members:" + conversation.getId().toString();
     members.forEach(
         member -> {
-          redisTemplate.opsForSet().add("members:" + conversation.getId().toString(), member);
+          redisTemplate.opsForSet().add(key, member);
         });
     // expire all anonymous conversations in 1 day
-    redisTemplate.expire(conversation.getId().toString(), 1, TimeUnit.DAYS);
+    redisTemplate.expire(key, 1, TimeUnit.DAYS);
   }
 
   public void saveMessage(String body, UUID senderId, UUID conversationId) {

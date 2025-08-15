@@ -11,13 +11,14 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AnonymousMessagingService {
-  private static final Logger LOG = LoggerFactory.getLogger(AnonymousMessagingService.class);
+public class MessagingService
+{
+  private static final Logger LOG = LoggerFactory.getLogger(MessagingService.class);
   private final ConversationDao conversationDao;
   private final RedisQueueService redisQueueService;
   private final SimpMessagingTemplate simpMessagingTemplate;
 
-  public AnonymousMessagingService(
+  public MessagingService(
       ConversationDao conversationDao,
       RedisQueueService redisQueueService,
       SimpMessagingTemplate simpMessagingTemplate) {

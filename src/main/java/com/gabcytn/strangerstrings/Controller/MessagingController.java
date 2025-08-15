@@ -3,7 +3,7 @@ package com.gabcytn.strangerstrings.Controller;
 import com.gabcytn.strangerstrings.DTO.ChatInitiationDto;
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
 import com.gabcytn.strangerstrings.DTO.WebSocketErrorResponse;
-import com.gabcytn.strangerstrings.Service.AnonymousMessagingService;
+import com.gabcytn.strangerstrings.Service.MessagingService;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.UUID;
@@ -18,26 +18,25 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Controller
-public class AnonymousMessagingController {
-  private static final Logger LOG = LoggerFactory.getLogger(AnonymousMessagingController.class);
-  private final AnonymousMessagingService anonymousMessagingService;
+public class MessagingController {
+  private static final Logger LOG = LoggerFactory.getLogger(MessagingController.class);
+  private final MessagingService messagingService;
   private final SimpMessagingTemplate simpMessagingTemplate;
 
-  public AnonymousMessagingController(
-      AnonymousMessagingService anonymousMessagingService,
-      SimpMessagingTemplate simpMessagingTemplate) {
-    this.anonymousMessagingService = anonymousMessagingService;
+  public MessagingController(
+      MessagingService messagingService, SimpMessagingTemplate simpMessagingTemplate) {
+    this.messagingService = messagingService;
     this.simpMessagingTemplate = simpMessagingTemplate;
   }
 
   @MessageMapping("/match")
   void queue(@RequestBody @Valid ChatInitiationDto chatInitiationDto, Principal principal) {
-    anonymousMessagingService.queue(chatInitiationDto, principal.getName());
+    messagingService.queue(chatInitiationDto, principal.getName());
   }
 
   @MessageMapping("/chat.send")
   public void message(@RequestBody @Valid StompSendPayload payload, Principal principal) {
-    anonymousMessagingService.message(payload, UUID.fromString(principal.getName()));
+    messagingService.message(payload, UUID.fromString(principal.getName()));
   }
 
   // error handler for input validation in websockets
@@ -55,7 +54,6 @@ public class AnonymousMessagingController {
     response.setTitle("Invalid payload.");
     response.setError(MethodArgumentNotValidException.class.toString());
     response.setDescription(errorMessage);
-    simpMessagingTemplate.convertAndSendToUser(
-        principal.getName(), "/queue/errors", response);
+    simpMessagingTemplate.convertAndSendToUser(principal.getName(), "/queue/errors", response);
   }
 }

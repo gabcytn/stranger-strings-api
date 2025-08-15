@@ -22,7 +22,7 @@ public class ConversationValidationAspect {
   }
 
   @Around(
-      "execution(* com.gabcytn.strangerstrings.Controller.AnonymousMessagingController.message(..))")
+      "execution(* com.gabcytn.strangerstrings.Controller.MessagingController.message(..))")
   public Object validateIncomingAnonymousChatMessage(ProceedingJoinPoint pjp) throws Throwable {
     Object[] args = pjp.getArgs();
     if (args[0] instanceof StompSendPayload payload && args[1] instanceof Principal principal) {

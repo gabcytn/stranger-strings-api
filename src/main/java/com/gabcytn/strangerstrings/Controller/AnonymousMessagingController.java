@@ -18,7 +18,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Controller
-@MessageMapping("/anonymous")
 public class AnonymousMessagingController {
   private static final Logger LOG = LoggerFactory.getLogger(AnonymousMessagingController.class);
   private final AnonymousMessagingService anonymousMessagingService;
@@ -31,12 +30,12 @@ public class AnonymousMessagingController {
     this.simpMessagingTemplate = simpMessagingTemplate;
   }
 
-  @MessageMapping("/queue")
+  @MessageMapping("/match")
   void queue(@RequestBody @Valid ChatInitiationDto chatInitiationDto, Principal principal) {
     anonymousMessagingService.queue(chatInitiationDto, principal.getName());
   }
 
-  @MessageMapping("/message")
+  @MessageMapping("/chat.send")
   public void message(@RequestBody @Valid StompSendPayload payload, Principal principal) {
     anonymousMessagingService.message(payload, UUID.fromString(principal.getName()));
   }
@@ -57,6 +56,6 @@ public class AnonymousMessagingController {
     response.setError(MethodArgumentNotValidException.class.toString());
     response.setDescription(errorMessage);
     simpMessagingTemplate.convertAndSendToUser(
-        principal.getName(), "/topic/errors", response);
+        principal.getName(), "/queue/errors", response);
   }
 }

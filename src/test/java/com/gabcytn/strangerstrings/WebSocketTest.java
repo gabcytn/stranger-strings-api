@@ -55,7 +55,7 @@ public class WebSocketTest {
 
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<String> receivedMessage = new AtomicReference<>();
-    String destination = "/user/topic/anonymous/queue";
+    String destination = "/user/topic/match";
     StompSessionHandler stompSessionHandler =
         new MyStompSessionHandler(destination, latch, receivedMessage);
     stompClient.connectAsync(getWsPath(), stompSessionHandler);
@@ -81,7 +81,7 @@ public class WebSocketTest {
     AtomicReference<String> client1response = new AtomicReference<>();
     AtomicReference<String> client2response = new AtomicReference<>();
 
-    String destination = "/user/topic/anonymous/queue";
+    String destination = "/user/topic/match";
 
     // Client 1 setup
     stompClient.connectAsync(
@@ -110,7 +110,7 @@ public class WebSocketTest {
                     }
                     ChatInitiationDto dto = new ChatInitiationDto();
                     dto.setInterests(List.of("java", "spring"));
-                    session.send("/app/anonymous/queue", dto);
+                    session.send("/app/match", dto);
                   }
                 });
 
@@ -159,7 +159,7 @@ public class WebSocketTest {
                     }
                     ChatInitiationDto dto = new ChatInitiationDto();
                     dto.setInterests(List.of("java", "spring"));
-                    session.send("/app/anonymous/queue", dto);
+                    session.send("/app/match", dto);
                   }
                 });
 
@@ -185,7 +185,7 @@ public class WebSocketTest {
         subscriptionLatch.await(5, TimeUnit.SECONDS), "Clients should subscribe within 5 seconds");
 
     // Wait for match confirmations
-    boolean matchResult = messageLatch.await(10, TimeUnit.SECONDS);
+    boolean matchResult = messageLatch.await(5, TimeUnit.SECONDS);
     Assertions.assertTrue(
         matchResult, "Both clients should receive match confirmation within 10 seconds");
 

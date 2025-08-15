@@ -62,7 +62,7 @@ public class AnonymousMessagingService {
         member -> {
           if (!senderId.toString().equals(member.toString())) {
             simpMessagingTemplate.convertAndSendToUser(
-                member.toString(), "/topic/anonymous/queue", payload.getMessage());
+                member.toString(), "/queue/chat", payload.getMessage());
           }
         });
   }
@@ -72,7 +72,7 @@ public class AnonymousMessagingService {
       redisQueueService.removeUserFromInterests(sessionId);
       simpMessagingTemplate.convertAndSendToUser(
           sessionId,
-          "/topic/anonymous/queue",
+          "/topic/match",
           "This is your conversation id: " + conversation.getId());
     }
     LOG.info("Successfully matched {} users.", sessionIds.size());

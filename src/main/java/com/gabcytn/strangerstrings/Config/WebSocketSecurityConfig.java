@@ -19,11 +19,11 @@ public class WebSocketSecurityConfig {
       MessageMatcherDelegatingAuthorizationManager.Builder messages) {
 
     return messages
-        .simpDestMatchers("/app/anonymous/**")
+        .simpDestMatchers("/app/**")
         .permitAll()
-        .simpSubscribeDestMatchers("/topic/anonymous/**")
+        .simpSubscribeDestMatchers("/topic/**", "/queue/**")
         .permitAll()
-        .simpMessageDestMatchers("/topic/anonymous/**")
+        .simpMessageDestMatchers("/topic/**", "/queue/**")
         .permitAll()
         .simpTypeMatchers(
             SimpMessageType.CONNECT_ACK,

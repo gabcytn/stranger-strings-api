@@ -3,10 +3,12 @@ package com.gabcytn.strangerstrings.Controller;
 import com.gabcytn.strangerstrings.DTO.ChatInitiationDto;
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
 import com.gabcytn.strangerstrings.DTO.WebSocketErrorResponse;
+import com.gabcytn.strangerstrings.Entity.Conversation;
+import com.gabcytn.strangerstrings.Exception.ConversationNotFoundException;
+import com.gabcytn.strangerstrings.Service.ConversationService;
 import com.gabcytn.strangerstrings.Service.MessagingService;
 import jakarta.validation.Valid;
 import java.security.Principal;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,11 +24,15 @@ public class MessagingController {
   private static final Logger LOG = LoggerFactory.getLogger(MessagingController.class);
   private final MessagingService messagingService;
   private final SimpMessagingTemplate simpMessagingTemplate;
+  private final ConversationService conversationService;
 
   public MessagingController(
-      MessagingService messagingService, SimpMessagingTemplate simpMessagingTemplate) {
+      MessagingService messagingService,
+      SimpMessagingTemplate simpMessagingTemplate,
+      ConversationService conversationService) {
     this.messagingService = messagingService;
     this.simpMessagingTemplate = simpMessagingTemplate;
+    this.conversationService = conversationService;
   }
 
   @MessageMapping("/match")
@@ -36,7 +42,24 @@ public class MessagingController {
 
   @MessageMapping("/chat.send")
   public void message(@RequestBody @Valid StompSendPayload payload, Principal principal) {
-    messagingService.message(payload, UUID.fromString(principal.getName()));
+    Conversation conversation =
+        conversationService
+            .getConversation(payload.getConversationId())
+            .orElseThrow(
+                () -> new ConversationNotFoundException("The conversation field is invalid."));
+    messagingService.message(payload.getMessage(), principal, conversation);
+  }
+
+  @MessageExceptionHandler(ConversationNotFoundException.class)
+  public void handleConversationNotFound(
+      ConversationNotFoundException exception, Principal principal) {
+    LOG.error("{} raised.", ConversationNotFoundException.class.getName());
+    WebSocketErrorResponse response =
+        new WebSocketErrorResponse(
+            "Conversation not found.",
+            MethodArgumentNotValidException.class.getName(),
+            exception.getMessage());
+    simpMessagingTemplate.convertAndSendToUser(principal.getName(), "/queue/errors", response);
   }
 
   // error handler for input validation in websockets

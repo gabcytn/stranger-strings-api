@@ -96,16 +96,6 @@ public class RedisQueueService {
     redisTemplate.expire(key, 1, TimeUnit.DAYS);
   }
 
-  public void saveMessage(String body, UUID senderId, UUID conversationId) {
-    String key = "messages:" + conversationId.toString();
-    redisTemplate
-        .opsForList()
-        .rightPush(
-            key, RedisAnonymousMessage.of(senderId, body));
-    // persist for 7 days for security purposes
-    redisTemplate.expire(key, 7, TimeUnit.DAYS);
-  }
-
   @Value("${spring.data.redis.users-interests-map}")
   public void setUsersToInterestsMapRedisKey(String key) {
     USERS_TO_INTERESTS_MAP_REDIS_KEY = key;

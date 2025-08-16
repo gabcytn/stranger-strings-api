@@ -5,6 +5,14 @@ public class WebSocketErrorResponse {
   private String error;
   private String description;
 
+  public WebSocketErrorResponse() {}
+
+  public WebSocketErrorResponse(String title, String error, String description) {
+    this.title = title;
+    this.error = error;
+    this.description = description;
+  }
+
   public String getTitle() {
     return title;
   }

@@ -4,9 +4,11 @@ import com.gabcytn.strangerstrings.DAO.MessageDao;
 import com.gabcytn.strangerstrings.Entity.Conversation;
 import com.gabcytn.strangerstrings.Entity.Message;
 import com.gabcytn.strangerstrings.Entity.User;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 @Component
+@Qualifier("DATABASE")
 public class DBMessageStorageService implements MessageStorageService {
   private final MessageDao messageDao;
 

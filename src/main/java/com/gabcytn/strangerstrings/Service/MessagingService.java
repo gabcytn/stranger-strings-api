@@ -22,8 +22,8 @@ public class MessagingService {
   private final UserService userService;
 
   public MessagingService(
-      @Qualifier("DBMessageStorageService") MessageStorageService dbMessageStorageService,
-      @Qualifier("RedisMessageStorageService") MessageStorageService redisMessageStorageService,
+      @Qualifier("DATABASE") MessageStorageService dbMessageStorageService,
+      @Qualifier("REDIS") MessageStorageService redisMessageStorageService,
       RedisQueueService redisQueueService,
       ConversationService conversationService,
       UserService userService,

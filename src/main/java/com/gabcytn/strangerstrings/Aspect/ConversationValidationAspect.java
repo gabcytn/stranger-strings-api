@@ -1,7 +1,6 @@
 package com.gabcytn.strangerstrings.Aspect;
 
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
-import com.gabcytn.strangerstrings.DTO.WebSocketErrorResponse;
 import com.gabcytn.strangerstrings.Exception.NonConversationMemberException;
 import com.gabcytn.strangerstrings.Service.RedisQueueService;
 import java.security.Principal;
@@ -37,17 +36,9 @@ public class ConversationValidationAspect {
         return pjp.proceed();
       }
       LOG.warn("User is not a part of the conversation.");
-      WebSocketErrorResponse errorResponse =
-          new WebSocketErrorResponse(
-              "Forbidden.",
-                  NonConversationMemberException.class.getName(),
-              "You are not a part of the conversation.");
-      simpMessagingTemplate.convertAndSendToUser(
-          principal.getName(), "/queue/errors", errorResponse);
-      return null;
+      throw new NonConversationMemberException("User is not a member of the conversation");
     }
 
-    LOG.info("Incorrect parameter types.");
-    return null;
+    throw new RuntimeException("Incorrect parameter types.");
   }
 }

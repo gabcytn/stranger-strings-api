@@ -10,7 +10,6 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 @Aspect
@@ -18,12 +17,9 @@ import org.springframework.stereotype.Component;
 public class ConversationValidationAspect {
   private static final Logger LOG = LoggerFactory.getLogger(ConversationValidationAspect.class);
   private final RedisQueueService redisQueueService;
-  private final SimpMessagingTemplate simpMessagingTemplate;
 
-  public ConversationValidationAspect(
-      RedisQueueService redisQueueService, SimpMessagingTemplate simpMessagingTemplate) {
+  public ConversationValidationAspect(RedisQueueService redisQueueService) {
     this.redisQueueService = redisQueueService;
-    this.simpMessagingTemplate = simpMessagingTemplate;
   }
 
   @Around("execution(* com.gabcytn.strangerstrings.Controller.MessagingController.message(..))")

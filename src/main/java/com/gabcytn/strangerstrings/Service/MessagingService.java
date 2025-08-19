@@ -3,6 +3,7 @@ package com.gabcytn.strangerstrings.Service;
 import com.gabcytn.strangerstrings.DTO.ChatInitiationDto;
 import com.gabcytn.strangerstrings.Entity.Conversation;
 import com.gabcytn.strangerstrings.Entity.User;
+import com.gabcytn.strangerstrings.Model.MessageServiceQueueingResponse;
 import java.security.Principal;
 import java.util.*;
 import org.slf4j.Logger;
@@ -36,13 +37,12 @@ public class MessagingService {
     this.simpMessagingTemplate = simpMessagingTemplate;
   }
 
-  public void queue(ChatInitiationDto chatInitiationDto, String simpSessionId) {
-    boolean hasMatch = false;
-    if (chatInitiationDto.getInterests().isEmpty()) {
-      // TODO: add to 'random' queue
-    }
+  public Optional<MessageServiceQueueingResponse> queue(
+      ChatInitiationDto chatInitiationDto, String simpSessionId) {
+    String prefix = simpSessionId.substring(0, 5); // get auth || anon prefix
     List<String> interestsWithoutMatches = new ArrayList<>();
-    for (String interest : chatInitiationDto.getInterests()) {
+    for (String plainInterest : chatInitiationDto.getInterests()) {
+      String interest = prefix + plainInterest;
       // queue for current interest does not exist
       if (redisQueueService.interestQueueIsEmpty(interest)) {
         interestsWithoutMatches.add(interest);
@@ -53,16 +53,20 @@ public class MessagingService {
       Conversation conversation = conversationService.create();
       List<String> conversationMembers = List.of(simpSessionId, matchedSessionId);
       redisQueueService.placeInConversationMembers(conversation, conversationMembers);
-      this.match(conversation, conversationMembers);
-      hasMatch = true;
       LOG.info("Match found: {}, {}; Interest: {}", simpSessionId, matchedSessionId, interest);
-      break;
+      return Optional.of(
+          new MessageServiceQueueingResponse(interest, redisQueueService.getConversationMembers(conversation.getId()), conversation));
     }
 
-    if (!hasMatch && !interestsWithoutMatches.isEmpty()) {
+    if (!interestsWithoutMatches.isEmpty()) {
       redisQueueService.placeUserInInterestsSet(interestsWithoutMatches, simpSessionId);
       LOG.info("No match found for interests: {}", interestsWithoutMatches);
     }
+    return Optional.empty();
+  }
+
+  public void removeFromInterestsSet(String sessionId) {
+    redisQueueService.removeUserFromInterests(sessionId);
   }
 
   public void message(String body, Principal sender, Conversation conversation) {
@@ -89,14 +93,5 @@ public class MessagingService {
             simpMessagingTemplate.convertAndSendToUser(member.toString(), "/queue/chat", body);
           }
         });
-  }
-
-  private void match(Conversation conversation, List<String> sessionIds) {
-    for (String sessionId : sessionIds) {
-      redisQueueService.removeUserFromInterests(sessionId);
-      simpMessagingTemplate.convertAndSendToUser(
-          sessionId, "/topic/match", "This is your conversation id: " + conversation.getId());
-    }
-    LOG.info("Successfully matched {} users.", sessionIds.size());
   }
 }

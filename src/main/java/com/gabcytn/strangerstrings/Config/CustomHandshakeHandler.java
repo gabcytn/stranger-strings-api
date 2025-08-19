@@ -1,7 +1,7 @@
 package com.gabcytn.strangerstrings.Config;
 
 import com.gabcytn.strangerstrings.DAO.UserDao;
-import com.gabcytn.strangerstrings.DTO.StompPrincipal;
+import com.gabcytn.strangerstrings.Model.StompPrincipal;
 import com.gabcytn.strangerstrings.DTO.UserPrincipal;
 import com.gabcytn.strangerstrings.Entity.User;
 import java.security.Principal;
@@ -30,16 +30,15 @@ public class CustomHandshakeHandler extends DefaultHandshakeHandler {
   protected Principal determineUser(
       ServerHttpRequest request, WebSocketHandler webSocketHandler, Map<String, Object> map) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
     try {
       if (authentication == null || !authentication.isAuthenticated()) throw new RuntimeException();
 
       UUID userId = getUserId(authentication).orElseThrow(RuntimeException::new);
-      LOG.info("Retrieved user id in handshake: {}", userId);
-      return new StompPrincipal(userId);
+      LOG.info("User is authenticated");
+      return StompPrincipal.ofAuthenticated(userId);
     } catch (RuntimeException e) {
       LOG.info("No retrieved user; user is anonymous");
-      return new StompPrincipal(UUID.randomUUID());
+      return StompPrincipal.ofAnonymous(UUID.randomUUID());
     }
   }
 

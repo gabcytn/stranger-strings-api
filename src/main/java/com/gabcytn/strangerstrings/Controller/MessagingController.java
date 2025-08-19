@@ -1,5 +1,6 @@
 package com.gabcytn.strangerstrings.Controller;
 
+import com.gabcytn.strangerstrings.Aspect.Annotation.ToValidate;
 import com.gabcytn.strangerstrings.DTO.ChatInitiationDto;
 import com.gabcytn.strangerstrings.DTO.InterestMatchedResponse;
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
@@ -63,6 +64,7 @@ public class MessagingController {
   }
 
   @MessageMapping("/chat.send")
+  @ToValidate
   public void message(@RequestBody @Valid StompSendPayload payload, Principal principal) {
     Conversation conversation =
         conversationService
@@ -99,8 +101,7 @@ public class MessagingController {
           member -> {
             User user = userService.findUserById(UUID.fromString(member)).orElseThrow();
             ConversationMemberDetails details =
-                new ConversationMemberDetails(
-                    member, user.getUsername(), user.getProfilePic());
+                new ConversationMemberDetails(member, user.getUsername(), user.getProfilePic());
             participants.add(details);
           });
     } else {

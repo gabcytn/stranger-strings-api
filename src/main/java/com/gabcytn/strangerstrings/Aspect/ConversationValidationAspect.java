@@ -22,7 +22,7 @@ public class ConversationValidationAspect {
     this.redisQueueService = redisQueueService;
   }
 
-  @Around("execution(* com.gabcytn.strangerstrings.Controller.MessagingController.message(..))")
+  @Around("@annotation(com.gabcytn.strangerstrings.Aspect.Annotation.ToValidate)")
   public Object validateIncomingAnonymousChatMessage(ProceedingJoinPoint pjp) throws Throwable {
     Object[] args = pjp.getArgs();
     if (args[0] instanceof StompSendPayload payload && args[1] instanceof Principal principal) {

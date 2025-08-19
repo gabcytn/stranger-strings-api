@@ -50,12 +50,16 @@ public class MessagingService {
       }
 
       String matchedSessionId = redisQueueService.getRandomMemberFromInterest(interest);
+      if (matchedSessionId.equals(simpSessionId)) return Optional.empty(); // do not match with oneself
       Conversation conversation = conversationService.create();
       List<String> conversationMembers = List.of(simpSessionId, matchedSessionId);
       redisQueueService.placeInConversationMembers(conversation, conversationMembers);
       LOG.info("Match found: {}, {}; Interest: {}", simpSessionId, matchedSessionId, interest);
       return Optional.of(
-          new MessageServiceQueueingResponse(interest, redisQueueService.getConversationMembers(conversation.getId()), conversation));
+          new MessageServiceQueueingResponse(
+              interest,
+              redisQueueService.getConversationMembers(conversation.getId()),
+              conversation));
     }
 
     if (!interestsWithoutMatches.isEmpty()) {

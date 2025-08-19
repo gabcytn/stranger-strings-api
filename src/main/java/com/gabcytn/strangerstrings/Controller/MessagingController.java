@@ -45,7 +45,6 @@ public class MessagingController {
     this.userService = userService;
   }
 
-  // FIX: disallow matching with oneself
   @MessageMapping("/match")
   public void queue(@RequestBody @Valid ChatInitiationDto chatInitiationDto, Principal principal) {
     try {

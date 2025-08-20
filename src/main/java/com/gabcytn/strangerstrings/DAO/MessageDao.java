@@ -1,8 +1,8 @@
 package com.gabcytn.strangerstrings.DAO;
 
 import com.gabcytn.strangerstrings.Entity.Message;
-import org.springframework.data.repository.ListCrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MessageDao extends ListCrudRepository<Message, Integer> {}
+public interface MessageDao extends JpaRepository<Message, Integer> {}

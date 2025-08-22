@@ -5,10 +5,12 @@ import java.util.Date;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "messages")
+@Table(
+    name = "messages",
+    indexes = {@Index(columnList = "conversation_id")})
 public class Message {
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE)
+  @GeneratedValue(strategy = GenerationType.AUTO)
   private Integer id;
 
   @Column(nullable = false)

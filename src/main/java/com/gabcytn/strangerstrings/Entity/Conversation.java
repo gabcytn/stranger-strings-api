@@ -2,6 +2,7 @@ package com.gabcytn.strangerstrings.Entity;
 
 import jakarta.persistence.*;
 import java.sql.Timestamp;
+import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -15,6 +16,9 @@ public class Conversation {
   @CreationTimestamp
   @Column(name = "created_at", updatable = false)
   private Timestamp createdAt;
+
+  @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
+  private Set<Message> messages;
 
   public UUID getId() {
     return id;
@@ -30,6 +34,14 @@ public class Conversation {
 
   public void setCreatedAt(Timestamp createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public Set<Message> getMessages() {
+    return messages;
+  }
+
+  public void setMessages(Set<Message> messages) {
+    this.messages = messages;
   }
 
   @Override

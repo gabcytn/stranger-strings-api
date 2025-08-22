@@ -1,5 +1,7 @@
 package com.gabcytn.strangerstrings.DTO;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gabcytn.strangerstrings.Model.ConversationMemberDetails;
 import java.util.Set;
 import java.util.UUID;
@@ -9,8 +11,11 @@ public class InterestMatchedResponse {
   private UUID conversationId;
   private Set<ConversationMemberDetails> participants;
 
+  @JsonCreator
   public InterestMatchedResponse(
-      String interest, UUID conversationId, Set<ConversationMemberDetails> participants) {
+      @JsonProperty("interest") String interest,
+      @JsonProperty("conversationId") UUID conversationId,
+      @JsonProperty("participants") Set<ConversationMemberDetails> participants) {
     this.interest = interest;
     this.conversationId = conversationId;
     this.participants = participants;

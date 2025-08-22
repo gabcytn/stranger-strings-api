@@ -1,12 +1,18 @@
 package com.gabcytn.strangerstrings.Model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ConversationMemberDetails {
   private String userId;
   private String username;
   private String profilePic;
 
-  public ConversationMemberDetails(String userId, String username, String profilePic) {
+  @JsonCreator
+  public ConversationMemberDetails(
+      @JsonProperty("userId") String userId,
+      @JsonProperty("username") String username,
+      @JsonProperty("profilePic") String profilePic) {
     this.userId = userId;
     this.username = username;
     this.profilePic = profilePic;

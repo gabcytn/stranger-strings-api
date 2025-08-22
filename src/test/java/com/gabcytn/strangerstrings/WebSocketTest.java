@@ -1,12 +1,10 @@
 package com.gabcytn.strangerstrings;
 
 import com.gabcytn.strangerstrings.DTO.ChatInitiationDto;
+import com.gabcytn.strangerstrings.DTO.InterestMatchedResponse;
 import com.gabcytn.strangerstrings.Helper.MyStompSessionHandler;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
@@ -78,8 +76,8 @@ public class WebSocketTest {
     CountDownLatch subscriptionLatch = new CountDownLatch(2); // Track subscriptions
     CountDownLatch messageLatch = new CountDownLatch(2); // Track received messages
 
-    AtomicReference<String> client1response = new AtomicReference<>();
-    AtomicReference<String> client2response = new AtomicReference<>();
+    AtomicReference<UUID> clientOneConversationId = new AtomicReference<>();
+    AtomicReference<UUID> clientTwoConversationId = new AtomicReference<>();
 
     String destination = "/user/topic/match";
 
@@ -97,25 +95,24 @@ public class WebSocketTest {
                 new StompFrameHandler() {
                   @Override
                   public Type getPayloadType(StompHeaders headers) {
-                    return String.class;
+                    return InterestMatchedResponse.class;
                   }
 
                   @Override
                   public void handleFrame(StompHeaders headers, Object payload) {
                     LOG.info("Client 1 received match confirmation: {}", payload);
-                    if (payload instanceof String s && !s.contains(destination)) {
+                    if (payload instanceof InterestMatchedResponse s) {
                       messageLatch.countDown();
-                      client1response.set(s);
-                      return;
+                      clientOneConversationId.set(s.getConversationId());
                     }
-                    ChatInitiationDto dto = new ChatInitiationDto();
-                    dto.setInterests(List.of("java", "spring"));
-                    session.send("/app/match", dto);
                   }
                 });
-
             LOG.info("Client 1 subscribed to {}", destination);
             subscriptionLatch.countDown();
+
+            ChatInitiationDto dto = new ChatInitiationDto();
+            dto.setInterests(List.of("java", "spring"));
+            session.send("/app/match", dto);
           }
 
           @Override
@@ -146,25 +143,25 @@ public class WebSocketTest {
                 new StompFrameHandler() {
                   @Override
                   public Type getPayloadType(StompHeaders headers) {
-                    return String.class;
+                    return InterestMatchedResponse.class;
                   }
 
                   @Override
                   public void handleFrame(StompHeaders headers, Object payload) {
                     LOG.info("Client 2 received match confirmation: {}", payload);
-                    if (payload instanceof String s && !s.contains(destination)) {
+                    if (payload instanceof InterestMatchedResponse s) {
                       messageLatch.countDown();
-                      client2response.set(s);
-                      return;
+                      clientTwoConversationId.set(s.getConversationId());
                     }
-                    ChatInitiationDto dto = new ChatInitiationDto();
-                    dto.setInterests(List.of("java", "spring"));
-                    session.send("/app/match", dto);
                   }
                 });
 
             LOG.info("Client 2 subscribed to {}", destination);
             subscriptionLatch.countDown();
+
+            ChatInitiationDto dto = new ChatInitiationDto();
+            dto.setInterests(List.of("java", "spring"));
+            session.send("/app/match", dto);
           }
 
           @Override
@@ -189,9 +186,9 @@ public class WebSocketTest {
     Assertions.assertTrue(
         matchResult, "Both clients should receive match confirmation within 10 seconds");
 
-    Assertions.assertEquals(client1response.get(), client2response.get());
-    LOG.info("Client 1 response: {}", client1response.get());
-    LOG.info("Client 2 response: {}", client2response.get());
+    Assertions.assertEquals(clientOneConversationId.get(), clientTwoConversationId.get());
+    LOG.info("Client 1 response: {}", clientOneConversationId.get());
+    LOG.info("Client 2 response: {}", clientTwoConversationId.get());
 
     LOG.info("Queue matching test completed successfully");
   }

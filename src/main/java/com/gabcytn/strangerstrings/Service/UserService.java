@@ -17,4 +17,8 @@ public class UserService {
   public Optional<User> findUserById(UUID userId) {
     return userDao.findById(userId);
   }
+
+  public Optional<User> findUserByUsername(String username) {
+    return userDao.findByUsername(username);
+  }
 }

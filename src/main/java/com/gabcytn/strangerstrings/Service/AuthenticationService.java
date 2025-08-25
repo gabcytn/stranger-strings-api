@@ -1,14 +1,13 @@
 package com.gabcytn.strangerstrings.Service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gabcytn.strangerstrings.DAO.RedisCacheDao;
+import com.gabcytn.strangerstrings.DAO.Cache.RefreshTokenCacheDao;
 import com.gabcytn.strangerstrings.DAO.UserDao;
 import com.gabcytn.strangerstrings.DTO.*;
-import com.gabcytn.strangerstrings.Entity.User;
-import com.gabcytn.strangerstrings.Exception.AuthenticationException;
-import com.gabcytn.strangerstrings.Exception.RefreshTokenException;
-import java.util.Optional;
+import com.gabcytn.strangerstrings.Exception.*;
+import com.gabcytn.strangerstrings.Model.RefreshTokenValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,83 +16,63 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthenticationService {
+  private static final Logger LOG = LoggerFactory.getLogger(AuthenticationService.class);
   private final UserDao userDao;
   private final PasswordEncoder passwordEncoder;
   private final AuthenticationManager authenticationManager;
   private final JwtService jwtService;
-  private final RedisCacheDao redisCacheRepository;
-  private final ObjectMapper objectMapper;
-  private final Long oneWeek = 60L * 60 * 24 * 7;
+  private final RefreshTokenCacheDao refreshTokenCacheDao;
 
   public AuthenticationService(
       UserDao userDao,
       PasswordEncoder passwordEncoder,
       AuthenticationManager authenticationManager,
       JwtService jwtService,
-      RedisCacheDao redisCacheDao,
-      ObjectMapper objectMapper) {
+      RefreshTokenCacheDao refreshTokenCacheDao) {
     this.userDao = userDao;
     this.passwordEncoder = passwordEncoder;
     this.authenticationManager = authenticationManager;
     this.jwtService = jwtService;
-    this.redisCacheRepository = redisCacheDao;
-    this.objectMapper = objectMapper;
+    this.refreshTokenCacheDao = refreshTokenCacheDao;
   }
 
-  public void signup(RegisterRequestDto user) throws AuthenticationException {
+  public void signup(RegisterRequestDto user) {
     try {
-      User userToSave = new User();
-      userToSave.setEmail(user.getEmail());
-      userToSave.setUsername(user.getUsername());
-      userToSave.setPassword(passwordEncoder.encode(user.getPassword()));
-
-      userDao.save(userToSave);
-    } catch (Exception e) {
-      System.err.println("Error signing up user: " + user.getEmail());
-      System.err.println(e.getMessage());
-      throw new AuthenticationException(
-          "User with email of: " + user.getEmail() + " fails to be inserted in the DB.");
+      userDao.save(user.toUserEntity(passwordEncoder));
+    } catch (DataIntegrityViolationException e) {
+      LOG.error("Username/Email - {} - already exists.", user.getUsername());
+      throw new DuplicateUserUniqueConstraintException();
     }
   }
 
-  public JwtResponseDto authenticate(LoginRequestDto user) throws Exception {
+  public JwtResponseDto authenticate(LoginRequestDto user) {
     Authentication authToken =
         new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());
     Authentication authentication = authenticationManager.authenticate(authToken);
 
-    if (!authentication.isAuthenticated()) throw new AuthenticationException("User not found");
-
+    if (!authentication.isAuthenticated()) throw new UserNotFoundException();
     String token = jwtService.generateToken(user.getUsername());
+
     // for future validation of a refresh token
-    RefreshTokenValidatorDto tokenValidatorDto =
-        new RefreshTokenValidatorDto(user.getUsername(), user.getDeviceName());
-    String tokenValidatorAsString = objectMapper.writeValueAsString(tokenValidatorDto);
-    jwtService.generateRefreshToken(tokenValidatorAsString, oneWeek);
+    RefreshTokenValidator tokenValidatorDto =
+        new RefreshTokenValidator(user.getUsername(), user.getDeviceName());
+    refreshTokenCacheDao.save(tokenValidatorDto);
     return new JwtResponseDto(token, jwtService.getExpirationTime());
   }
 
-  public JwtResponseDto newJwt(String refreshToken, String deviceName)
-      throws RefreshTokenException {
-    try {
-      Optional<CacheData> cacheData = redisCacheRepository.findById(refreshToken);
-      if (cacheData.isEmpty()) throw new RefreshTokenException("Refresh token is invalid.");
+  public JwtResponseDto newJwt(String oldRefreshToken, String deviceName)
+      throws RefreshTokenException, RefreshTokenNotFoundException {
+    RefreshTokenValidator tokenValidator =
+        refreshTokenCacheDao
+            .findById(oldRefreshToken)
+            .orElseThrow(RefreshTokenNotFoundException::new);
+    if (!deviceName.equals(tokenValidator.getDeviceName()))
+      throw new RefreshTokenException("Stored device name does not match request's device name");
+    String jwt = jwtService.generateToken(tokenValidator.getUsername());
 
-      String tokenValidatorAsString = cacheData.get().getValue();
-      TypeReference<RefreshTokenValidatorDto> mapType = new TypeReference<>() {};
-      RefreshTokenValidatorDto tokenValidatorDto =
-          objectMapper.readValue(tokenValidatorAsString, mapType);
-      if (!deviceName.equals(tokenValidatorDto.deviceName()))
-        throw new RefreshTokenException("Stored device name does not match request's device name");
-      String jwt = jwtService.generateToken(tokenValidatorDto.username());
-
-      // delete old refresh token
-      redisCacheRepository.delete(cacheData.get());
-      jwtService.generateRefreshToken(tokenValidatorAsString, oneWeek);
-      return new JwtResponseDto(jwt, jwtService.getExpirationTime());
-    } catch (Exception e) {
-      System.err.println("Error generating new JWT");
-      System.err.println(e.getMessage());
-      throw new RefreshTokenException(e.getMessage());
-    }
+    refreshTokenCacheDao.deleteById(tokenValidator.getUsername());
+    String newRefreshToken = jwtService.generateRefreshToken();
+    jwtService.sendRefreshTokenInResponseCookie(newRefreshToken);
+    return new JwtResponseDto(jwt, jwtService.getExpirationTime());
   }
 }

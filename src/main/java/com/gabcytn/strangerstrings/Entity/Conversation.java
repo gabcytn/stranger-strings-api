@@ -20,6 +20,13 @@ public class Conversation {
   @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
   private Set<Message> messages;
 
+  @ManyToMany
+  @JoinTable(
+      name = "conversation_members",
+      joinColumns = @JoinColumn(name = "conversation_id"),
+      inverseJoinColumns = @JoinColumn(name = "user_id"))
+  private Set<User> members;
+
   public UUID getId() {
     return id;
   }
@@ -42,6 +49,14 @@ public class Conversation {
 
   public void setMessages(Set<Message> messages) {
     this.messages = messages;
+  }
+
+  public Set<User> getMembers() {
+    return members;
+  }
+
+  public void setMembers(Set<User> members) {
+    this.members = members;
   }
 
   @Override

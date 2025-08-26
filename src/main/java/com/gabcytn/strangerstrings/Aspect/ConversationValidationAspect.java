@@ -1,10 +1,16 @@
 package com.gabcytn.strangerstrings.Aspect;
 
+import com.gabcytn.strangerstrings.DAO.Cache.AnonymousConversationDao;
+import com.gabcytn.strangerstrings.DAO.ConversationDao;
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
 import com.gabcytn.strangerstrings.DTO.UserPrincipal;
+import com.gabcytn.strangerstrings.Entity.Conversation;
 import com.gabcytn.strangerstrings.Entity.User;
+import com.gabcytn.strangerstrings.Exception.ConversationNotFoundException;
 import com.gabcytn.strangerstrings.Exception.NonConversationMemberException;
 import com.gabcytn.strangerstrings.Exception.UserNotFoundException;
+import com.gabcytn.strangerstrings.Model.AnonymousConversation;
+import com.gabcytn.strangerstrings.Model.ConversationMemberDetails;
 import com.gabcytn.strangerstrings.Service.RedisQueueService;
 import com.gabcytn.strangerstrings.Service.UserService;
 import java.security.Principal;
@@ -24,11 +30,18 @@ public class ConversationValidationAspect {
   private static final Logger LOG = LoggerFactory.getLogger(ConversationValidationAspect.class);
   private final RedisQueueService redisQueueService;
   private final UserService userService;
+  private final AnonymousConversationDao anonymousConversationDao;
+  private final ConversationDao conversationDao;
 
   public ConversationValidationAspect(
-      RedisQueueService redisQueueService, UserService userService) {
+      RedisQueueService redisQueueService,
+      UserService userService,
+      AnonymousConversationDao anonymousConversationDao,
+      ConversationDao conversationDao) {
     this.redisQueueService = redisQueueService;
     this.userService = userService;
+    this.anonymousConversationDao = anonymousConversationDao;
+    this.conversationDao = conversationDao;
   }
 
   @Around("@annotation(com.gabcytn.strangerstrings.Aspect.Annotation.ToValidate)")
@@ -36,9 +49,24 @@ public class ConversationValidationAspect {
     Object[] args = pjp.getArgs();
     if (args[0] instanceof StompSendPayload payload && args[1] instanceof Principal principal) {
       UUID conversationId = payload.getConversationId();
-      UUID userId = UUID.fromString(principal.getName());
-      if (redisQueueService.isMemberOfConversation(userId, conversationId)) {
-        return pjp.proceed();
+      String userId = principal.getName();
+      if (userId.startsWith("anon:")) {
+        AnonymousConversation conversation =
+            anonymousConversationDao
+                .findById(conversationId)
+                .orElseThrow(ConversationNotFoundException::new);
+        if (conversation.getParticipants().contains(new ConversationMemberDetails(userId))) {
+          return pjp.proceed();
+        }
+      } else {
+        Conversation conversation =
+            conversationDao
+                .findById(conversationId)
+                .orElseThrow(ConversationNotFoundException::new);
+        User user = userService.findUserById(UUID.fromString(userId)).orElseThrow();
+        if (conversation.getMembers().contains(user)) {
+          return pjp.proceed();
+        }
       }
       LOG.warn("User is not a part of the conversation.");
       throw new NonConversationMemberException("User is not a member of the conversation");

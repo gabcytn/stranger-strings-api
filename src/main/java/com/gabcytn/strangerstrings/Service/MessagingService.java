@@ -1,14 +1,17 @@
 package com.gabcytn.strangerstrings.Service;
 
-import com.gabcytn.strangerstrings.DTO.ChatInitiationDto;
+import com.gabcytn.strangerstrings.DAO.Cache.AnonymousConversationDao;
+import com.gabcytn.strangerstrings.DAO.MessageDao;
 import com.gabcytn.strangerstrings.Entity.Conversation;
+import com.gabcytn.strangerstrings.Entity.Message;
 import com.gabcytn.strangerstrings.Entity.User;
-import com.gabcytn.strangerstrings.Model.MessageServiceQueueingResponse;
+import com.gabcytn.strangerstrings.Exception.UserNotFoundException;
+import com.gabcytn.strangerstrings.Model.*;
 import java.security.Principal;
 import java.util.*;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -16,61 +19,92 @@ import org.springframework.stereotype.Service;
 public class MessagingService {
   private static final Logger LOG = LoggerFactory.getLogger(MessagingService.class);
   private final RedisQueueService redisQueueService;
-  private final MessageStorageService dbMessageStorageService;
-  private final MessageStorageService redisMessageStorageService;
   private final SimpMessagingTemplate simpMessagingTemplate;
   private final ConversationService conversationService;
   private final UserService userService;
+  private final MessageDao messageDao;
+  private final AnonymousConversationDao anonymousConversationDao;
 
   public MessagingService(
-      @Qualifier("DATABASE") MessageStorageService dbMessageStorageService,
-      @Qualifier("REDIS") MessageStorageService redisMessageStorageService,
       RedisQueueService redisQueueService,
       ConversationService conversationService,
       UserService userService,
-      SimpMessagingTemplate simpMessagingTemplate) {
-    this.dbMessageStorageService = dbMessageStorageService;
-    this.redisMessageStorageService = redisMessageStorageService;
+      SimpMessagingTemplate simpMessagingTemplate,
+      MessageDao messageDao,
+      AnonymousConversationDao anonymousConversationDao) {
     this.redisQueueService = redisQueueService;
     this.conversationService = conversationService;
     this.userService = userService;
     this.simpMessagingTemplate = simpMessagingTemplate;
+    this.messageDao = messageDao;
+    this.anonymousConversationDao = anonymousConversationDao;
   }
 
-  public Optional<MessageServiceQueueingResponse> queue(
-      ChatInitiationDto chatInitiationDto, String simpSessionId) {
-    String prefix = simpSessionId.substring(0, 5); // get auth || anon prefix
+  private Optional<MessageServiceQueueingResponse> handleQueue(
+      List<String> interests,
+      String userId,
+      Function<QueueHandlerResponse, Optional<MessageServiceQueueingResponse>> onMatchSuccess) {
+
     List<String> interestsWithoutMatches = new ArrayList<>();
-    for (String plainInterest : chatInitiationDto.getInterests()) {
-      String interest = prefix + plainInterest;
-      // queue for current interest does not exist
+    for (String interest : interests) {
       if (redisQueueService.interestQueueIsEmpty(interest)) {
         interestsWithoutMatches.add(interest);
         continue;
       }
 
       String matchedSessionId = redisQueueService.getRandomMemberFromInterest(interest);
-      if (matchedSessionId.equals(simpSessionId)) return Optional.empty(); // do not match with oneself
-      Conversation conversation = conversationService.create();
-      List<String> conversationMembers = List.of(simpSessionId, matchedSessionId);
-      redisQueueService.placeInConversationMembers(conversation, conversationMembers);
-      LOG.info("Match found: {}, {}; Interest: {}", simpSessionId, matchedSessionId, interest);
-      return Optional.of(
-          new MessageServiceQueueingResponse(
-              interest,
-              redisQueueService.getConversationMembers(conversation.getId()),
-              conversation));
+      if (matchedSessionId.equals(userId)) return Optional.empty();
+
+      redisQueueService.removeUserFromInterests(userId);
+      redisQueueService.removeUserFromInterests(matchedSessionId);
+
+      return onMatchSuccess.apply(new QueueHandlerResponse(interest, matchedSessionId));
     }
 
     if (!interestsWithoutMatches.isEmpty()) {
-      redisQueueService.placeUserInInterestsSet(interestsWithoutMatches, simpSessionId);
+      redisQueueService.placeUserInInterestsSet(interestsWithoutMatches, userId.toString());
       LOG.info("No match found for interests: {}", interestsWithoutMatches);
     }
     return Optional.empty();
   }
 
-  public void removeFromInterestsSet(String sessionId) {
-    redisQueueService.removeUserFromInterests(sessionId);
+  public Optional<MessageServiceQueueingResponse> queueOfAnonymous(
+      List<String> interests, String userId) {
+    return handleQueue(
+        interests,
+        userId,
+        response -> {
+          ConversationMemberDetails member1 =
+              new ConversationMemberDetails(response.getMatchedUserId());
+          ConversationMemberDetails member2 = new ConversationMemberDetails(userId);
+          UUID conversationId = UUID.randomUUID();
+          AnonymousConversation conversation =
+              new AnonymousConversation(conversationId, Set.of(member1, member2));
+          anonymousConversationDao.save(conversation);
+          return Optional.of(
+              new MessageServiceQueueingResponse(
+                  response.getInterest(), Set.of(member1, member2), conversationId));
+        });
+  }
+
+  public Optional<MessageServiceQueueingResponse> queueOfAuthenticated(
+      List<String> interests, String userId) {
+    return handleQueue(
+        interests,
+        userId,
+        response -> {
+          Conversation conversation = conversationService.create();
+          ConversationMemberDetails member1 =
+              new ConversationMemberDetails(response.getMatchedUserId());
+          ConversationMemberDetails member2 = new ConversationMemberDetails(userId);
+          conversation.setMembers(
+              userService.getUserSetFromIdList(
+                  List.of(UUID.fromString(userId), UUID.fromString(response.getMatchedUserId()))));
+          conversationService.save(conversation);
+          return Optional.of(
+              new MessageServiceQueueingResponse(
+                  response.getInterest(), Set.of(member1, member2), conversation.getId()));
+        });
   }
 
   public void message(String body, Principal sender, Conversation conversation) {
@@ -79,13 +113,17 @@ public class MessagingService {
   }
 
   private void persistMessage(String body, Principal sender, Conversation conversation) {
-    Optional<User> user = userService.findUserById(UUID.fromString(sender.getName()));
+    Optional<User> user =
+        userService.findUserById(UUID.fromString(sender.getName())); // FIX: substring prefix
     if (user.isEmpty()) {
-      User anonymousUser = new User();
-      anonymousUser.setId(UUID.fromString(sender.getName()));
-      redisMessageStorageService.save(body, anonymousUser, conversation);
+      AnonymousConversation anonymousConversation =
+          anonymousConversationDao.findById(conversation.getId()).orElseThrow();
+      anonymousConversation
+          .getMessages()
+          .add(new AnonymousMessage(new ConversationMemberDetails(sender.getName()), body));
     } else {
-      dbMessageStorageService.save(body, user.get(), conversation);
+      Message message = new Message(body, user.get(), conversation, new Date());
+      messageDao.save(message);
     }
   }
 

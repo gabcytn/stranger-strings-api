@@ -11,8 +11,8 @@ public class StompPrincipal implements Principal {
   }
 
   public static StompPrincipal ofAuthenticated(UUID identifier) {
-    String name = "auth:" + identifier.toString();
-    return new StompPrincipal(name);
+    //    String name = "auth:" + identifier.toString();
+    return new StompPrincipal(identifier.toString()); // omit 'auth' prefix
   }
 
   public static StompPrincipal ofAnonymous(UUID identifier) {

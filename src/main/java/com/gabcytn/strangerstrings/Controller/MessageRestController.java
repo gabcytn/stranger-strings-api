@@ -33,7 +33,6 @@ public class MessageRestController {
 
   // FIX: minimize function size (i.e. split up)
   // TODO: handle 'not found' exceptions
-  // TODO: validate user is member of conversation (use aspect)
   @GetMapping
   public PaginatedMessageResponse get(
       @RequestParam UUID conversationId, @RequestParam int pageNumber) {

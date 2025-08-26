@@ -1,9 +1,6 @@
 package com.gabcytn.strangerstrings.Service;
 
-import com.gabcytn.strangerstrings.Entity.Conversation;
-import com.gabcytn.strangerstrings.Model.RedisAnonymousMessage;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -84,16 +81,6 @@ public class RedisQueueService {
 
   private void setUserInterestsListMap(Map<String, List<String>> map) {
     redisUsersInterestsMapTemplate.opsForValue().set(USERS_TO_INTERESTS_MAP_REDIS_KEY, map);
-  }
-
-  public void placeInConversationMembers(Conversation conversation, List<String> members) {
-    String key = "members:" + conversation.getId().toString();
-    members.forEach(
-        member -> {
-          redisTemplate.opsForSet().add(key, member);
-        });
-    // expire all anonymous conversations in 1 day
-    redisTemplate.expire(key, 1, TimeUnit.DAYS);
   }
 
   @Value("${spring.data.redis.users-interests-map}")

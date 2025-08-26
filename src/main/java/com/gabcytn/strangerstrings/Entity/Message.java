@@ -28,6 +28,23 @@ public class Message {
   @Column(name = "created_at", updatable = false)
   private Date createdAt;
 
+  public Message() {}
+
+  public Message(String body, User sender, Conversation conversation, Date createdAt) {
+    this.body = body;
+    this.sender = sender;
+    this.conversation = conversation;
+    this.createdAt = createdAt;
+  }
+
+  public Message(Integer id, String body, User sender, Conversation conversation, Date createdAt) {
+    this.id = id;
+    this.body = body;
+    this.sender = sender;
+    this.conversation = conversation;
+    this.createdAt = createdAt;
+  }
+
   public int getId() {
     return id;
   }

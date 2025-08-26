@@ -1,12 +1,21 @@
 package com.gabcytn.strangerstrings.Config;
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 @EnableRedisRepositories(basePackages = "com.gabcytn.strangerstrings.DAO.Cache")
@@ -28,60 +37,43 @@ public class RedisConfig {
     return new LettuceConnectionFactory(configuration);
   }
 
-  //  @Bean
-  //  public RedisTemplate<String, Object> redisQueueTemplate(
-  //      LettuceConnectionFactory lettuceConnectionFactory) {
-  //    RedisTemplate<String, Object> template = new RedisTemplate<>();
-  //
-  //    template.setConnectionFactory(lettuceConnectionFactory);
-  //    template.setKeySerializer(StringRedisSerializer.UTF_8);
-  //
-  //    GenericJackson2JsonRedisSerializer redisSerializer = new
-  // GenericJackson2JsonRedisSerializer();
-  //    template.setValueSerializer(redisSerializer);
-  //    template.setHashKeySerializer(StringRedisSerializer.UTF_8);
-  //    template.setHashValueSerializer(
-  //        new Jackson2JsonRedisSerializer<>(new TypeReference<List<String>>() {}.getClass()));
-  //    template.afterPropertiesSet();
-  //
-  //    return template;
-  //  }
-  //
-  //  @Bean
-  //  public RedisTemplate<String, Map<String, List<String>>> redisUsersInterestsMapTemplate(
-  //      LettuceConnectionFactory lettuceConnectionFactory) {
-  //    RedisTemplate<String, Map<String, List<String>>> template = new RedisTemplate<>();
-  //
-  //    template.setConnectionFactory(lettuceConnectionFactory);
-  //    template.setKeySerializer(StringRedisSerializer.UTF_8);
-  //    template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-  //    template.afterPropertiesSet();
-  //
-  //    return template;
-  //  }
-  //
-  //  @Bean
-  //  public RedisTemplate<String, RefreshTokenValidator> redisRefreshTokenTemplate(
-  //      LettuceConnectionFactory lettuceConnectionFactory) {
-  //    RedisTemplate<String, RefreshTokenValidator> template = new RedisTemplate<>();
-  //
-  //    template.setConnectionFactory(lettuceConnectionFactory);
-  //    template.setKeySerializer(StringRedisSerializer.UTF_8);
-  //    template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-  //    template.afterPropertiesSet();
-  //
-  //    return template;
-  //  }
-  //
-  //  @Bean
-  //  public RedisTemplate<String, UserInterestsMap> redisUsersToInterestsMapTemplate(
-  //      LettuceConnectionFactory connectionFactory) {
-  //    RedisTemplate<String, UserInterestsMap> template = new RedisTemplate<>();
-  //    template.setConnectionFactory(connectionFactory);
-  //    template.setKeySerializer(StringRedisSerializer.UTF_8);
-  //    template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-  //    template.afterPropertiesSet();
-  //
-  //    return template;
-  //  }
+  @Bean
+  public RedisTemplate<String, Object> redisQueueTemplate(
+      LettuceConnectionFactory lettuceConnectionFactory) {
+    RedisTemplate<String, Object> template = new RedisTemplate<>();
+
+    template.setConnectionFactory(lettuceConnectionFactory);
+    template.setKeySerializer(StringRedisSerializer.UTF_8);
+
+    template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+    template.afterPropertiesSet();
+
+    return template;
+  }
+
+  @Bean
+  public RedisTemplate<String, Map<String, List<String>>> redisUsersInterestsMapTemplate(
+      LettuceConnectionFactory lettuceConnectionFactory) {
+    RedisTemplate<String, Map<String, List<String>>> template = new RedisTemplate<>();
+
+    template.setConnectionFactory(lettuceConnectionFactory);
+    template.setKeySerializer(StringRedisSerializer.UTF_8);
+    template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+    template.afterPropertiesSet();
+
+    return template;
+  }
+
+  @Bean
+  public RedisCacheManager cacheManager(LettuceConnectionFactory connectionFactory) {
+    RedisCacheConfiguration config =
+        RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(15))
+            .disableCachingNullValues()
+            .serializeValuesWith(
+                RedisSerializationContext.SerializationPair.fromSerializer(
+                    new GenericJackson2JsonRedisSerializer()));
+
+    return RedisCacheManager.builder(connectionFactory).cacheDefaults(config).build();
+  }
 }

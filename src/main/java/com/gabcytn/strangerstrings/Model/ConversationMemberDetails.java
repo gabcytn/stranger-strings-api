@@ -2,6 +2,7 @@ package com.gabcytn.strangerstrings.Model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 
 public class ConversationMemberDetails {
   private String userId;
@@ -16,6 +17,10 @@ public class ConversationMemberDetails {
     this.userId = userId;
     this.username = username;
     this.profilePic = profilePic;
+  }
+
+  public ConversationMemberDetails(String userId) {
+    this.userId = userId;
   }
 
   public String getUserId() {
@@ -52,5 +57,17 @@ public class ConversationMemberDetails {
         + profilePic
         + '\''
         + '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || getClass() != o.getClass()) return false;
+    ConversationMemberDetails that = (ConversationMemberDetails) o;
+    return Objects.equals(userId, that.userId);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(userId);
   }
 }

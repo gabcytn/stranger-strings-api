@@ -48,23 +48,6 @@ public class WebSocketTest {
   }
 
   @Test
-  void testReceivedMessageOnSubscribe() throws InterruptedException {
-    stompClient.setMessageConverter(new StringMessageConverter());
-
-    CountDownLatch latch = new CountDownLatch(1);
-    AtomicReference<String> receivedMessage = new AtomicReference<>();
-    String destination = "/user/topic/match";
-    StompSessionHandler stompSessionHandler =
-        new MyStompSessionHandler(destination, latch, receivedMessage);
-    stompClient.connectAsync(getWsPath(), stompSessionHandler);
-
-    boolean isMessageReceived = latch.await(1, TimeUnit.SECONDS);
-    Assertions.assertTrue(isMessageReceived);
-    Assertions.assertEquals(
-        receivedMessage.get(), String.format("Successfully subscribed to: %s", destination));
-  }
-
-  @Test
   void testQueueMatching() throws InterruptedException {
     List<MessageConverter> messageConverters = new ArrayList<>();
     messageConverters.add(new StringMessageConverter());

@@ -1,21 +1,19 @@
 package com.gabcytn.strangerstrings.Model;
 
-import com.gabcytn.strangerstrings.Entity.Conversation;
 import java.util.Set;
+import java.util.UUID;
 
 public class MessageServiceQueueingResponse {
   private String interest;
-  private Set<Object> members;
-  private Conversation conversation;
+  private Set<ConversationMemberDetails> members;
+  private UUID conversationId;
 
   public MessageServiceQueueingResponse(
-          String interest, Set<Object> members, Conversation conversation) {
+      String interest, Set<ConversationMemberDetails> members, UUID conversationId) {
     this.interest = interest;
     this.members = members;
-    this.conversation = conversation;
+    this.conversationId = conversationId;
   }
-
-  public MessageServiceQueueingResponse() {}
 
   public String getInterest() {
     return interest;
@@ -25,20 +23,20 @@ public class MessageServiceQueueingResponse {
     this.interest = interest;
   }
 
-  public Set<Object> getMembers() {
+  public Set<ConversationMemberDetails> getMembers() {
     return members;
   }
 
-  public void setMembers(Set<Object> members) {
+  public void setMembers(Set<ConversationMemberDetails> members) {
     this.members = members;
   }
 
-  public Conversation getConversation() {
-    return conversation;
+  public UUID getConversationId() {
+    return conversationId;
   }
 
-  public void setConversation(Conversation conversation) {
-    this.conversation = conversation;
+  public void setConversation(UUID conversationId) {
+    this.conversationId = conversationId;
   }
 
   @Override
@@ -50,7 +48,7 @@ public class MessageServiceQueueingResponse {
         + ", members="
         + members
         + ", conversation="
-        + conversation
+        + conversationId
         + '}';
   }
 }

@@ -45,7 +45,7 @@ public class AuthenticationService {
     }
   }
 
-  public JwtResponseDto authenticate(LoginRequestDto user) {
+  public JwtResponseDto authenticate(LoginRequestDto user, String refreshToken) {
     Authentication authToken =
         new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());
     Authentication authentication = authenticationManager.authenticate(authToken);
@@ -53,10 +53,13 @@ public class AuthenticationService {
     if (!authentication.isAuthenticated()) throw new UserNotFoundException();
     String token = jwtService.generateToken(user.getUsername());
 
-    // for future validation of a refresh token
-    RefreshTokenValidator tokenValidatorDto =
-        new RefreshTokenValidator(user.getUsername(), user.getDeviceName());
-    refreshTokenCacheDao.save(tokenValidatorDto);
+    if (refreshToken == null) {
+      String generatedRefreshToken = jwtService.generateRefreshToken();
+      RefreshTokenValidator tokenValidatorDto =
+          new RefreshTokenValidator(generatedRefreshToken, user.getUsername(), user.getDeviceName());
+      refreshTokenCacheDao.save(tokenValidatorDto);
+      jwtService.sendRefreshTokenInResponseCookie(generatedRefreshToken);
+    }
     return new JwtResponseDto(token, jwtService.getExpirationTime());
   }
 
@@ -70,8 +73,9 @@ public class AuthenticationService {
       throw new RefreshTokenException("Stored device name does not match request's device name");
     String jwt = jwtService.generateToken(tokenValidator.getUsername());
 
-    refreshTokenCacheDao.deleteById(tokenValidator.getUsername());
+    refreshTokenCacheDao.deleteById(oldRefreshToken);
     String newRefreshToken = jwtService.generateRefreshToken();
+    refreshTokenCacheDao.save(new RefreshTokenValidator(newRefreshToken, tokenValidator.getUsername(), tokenValidator.getDeviceName()));
     jwtService.sendRefreshTokenInResponseCookie(newRefreshToken);
     return new JwtResponseDto(jwt, jwtService.getExpirationTime());
   }

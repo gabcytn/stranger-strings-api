@@ -1,7 +1,6 @@
 package com.gabcytn.strangerstrings.Controller;
 
 import com.gabcytn.strangerstrings.DTO.*;
-import com.gabcytn.strangerstrings.Exception.AuthenticationException;
 import com.gabcytn.strangerstrings.Service.AuthenticationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -18,16 +17,16 @@ public class AuthenticationController {
   }
 
   @PostMapping("/register")
-  public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequestDto registerRequestDto)
-      throws AuthenticationException {
+  public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequestDto registerRequestDto) {
     authenticationService.signup(registerRequestDto);
     return new ResponseEntity<>(HttpStatus.CREATED);
   }
 
   @PostMapping("/login")
-  public ResponseEntity<JwtResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto)
-      throws Exception {
-    JwtResponseDto responseDto = authenticationService.authenticate(loginRequestDto);
+  public ResponseEntity<JwtResponseDto> login(
+      @Valid @RequestBody LoginRequestDto loginRequestDto,
+      @CookieValue(value = "X-REFRESH-TOKEN", required = false) String refreshToken) {
+    JwtResponseDto responseDto = authenticationService.authenticate(loginRequestDto, refreshToken);
     return new ResponseEntity<>(responseDto, HttpStatus.OK);
   }
 

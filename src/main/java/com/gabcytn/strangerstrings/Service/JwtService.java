@@ -1,7 +1,5 @@
 package com.gabcytn.strangerstrings.Service;
 
-import com.gabcytn.strangerstrings.DAO.RedisCacheDao;
-import com.gabcytn.strangerstrings.DTO.CacheData;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -24,7 +22,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class JwtService {
-  private final RedisCacheDao redisCacheDao;
   private final HttpServletResponse response;
 
   @Value("${security.jwt.secret-key}")
@@ -33,8 +30,7 @@ public class JwtService {
   @Value("${security.jwt.expiration-time}")
   private long jwtExpiration;
 
-  public JwtService(RedisCacheDao redisCacheDao, HttpServletResponse response) {
-    this.redisCacheDao = redisCacheDao;
+  public JwtService(HttpServletResponse response) {
     this.response = response;
   }
 
@@ -91,14 +87,16 @@ public class JwtService {
     return Keys.hmacShaKeyFor(keyBytes);
   }
 
-  public void generateRefreshToken(String tokenValidatorAsString, Long expiration) {
-    String refreshToken = hashString(generateRandomString());
+  public String generateRefreshToken() {
+		return hashString(generateRandomString());
+  }
+
+  public void sendRefreshTokenInResponseCookie(String refreshToken) {
     Cookie cookie = new Cookie("X-REFRESH-TOKEN", refreshToken);
     cookie.setHttpOnly(true);
     cookie.setPath("/");
     cookie.setMaxAge(3600);
     response.addCookie(cookie);
-    redisCacheDao.save(new CacheData(refreshToken, tokenValidatorAsString, expiration));
   }
 
   private String hashString(String text) {

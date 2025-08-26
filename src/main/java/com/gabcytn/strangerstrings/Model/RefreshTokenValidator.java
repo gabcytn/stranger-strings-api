@@ -6,11 +6,13 @@ import org.springframework.data.redis.core.TimeToLive;
 
 @RedisHash(value = "refreshToken")
 public class RefreshTokenValidator {
-  @Id private String username;
+  @TimeToLive private long expiresAt = 60L * 60 * 24 * 7;
+  @Id private String key;
+  private String username;
   private String deviceName;
-  @TimeToLive private final long expiresAt = 60L * 60 * 24 * 7;
 
-  public RefreshTokenValidator(String username, String deviceName) {
+  public RefreshTokenValidator(String key, String username, String deviceName) {
+    this.key = key;
     this.username = username;
     this.deviceName = deviceName;
   }
@@ -29,5 +31,21 @@ public class RefreshTokenValidator {
 
   public void setDeviceName(String deviceName) {
     this.deviceName = deviceName;
+  }
+
+  public String getKey() {
+    return key;
+  }
+
+  public void setKey(String key) {
+    this.key = key;
+  }
+
+  public long getExpiresAt() {
+    return expiresAt;
+  }
+
+  public void setExpiresAt(long expiresAt) {
+    this.expiresAt = expiresAt;
   }
 }

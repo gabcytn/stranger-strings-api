@@ -58,7 +58,7 @@ public abstract class AbstractQueueService implements QueueService {
   public Optional<UUID> getRandomMemberFromInterest(String interest) {
     Object randomMemberObject = redisTemplate.opsForSet().randomMember(this.namespaced(interest));
     try {
-      return Optional.of((UUID) randomMemberObject);
+      return Optional.of(UUID.fromString((String) randomMemberObject));
     } catch (RuntimeException e) {
       LOG.debug("Error casting object to UUID.");
       LOG.info("Object retrieved: {}", randomMemberObject);

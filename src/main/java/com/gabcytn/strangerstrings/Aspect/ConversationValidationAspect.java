@@ -1,6 +1,7 @@
 package com.gabcytn.strangerstrings.Aspect;
 
 import com.gabcytn.strangerstrings.DAO.Cache.AnonymousConversationDao;
+import com.gabcytn.strangerstrings.DAO.Cache.UsersInterestDao;
 import com.gabcytn.strangerstrings.DAO.ConversationDao;
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
 import com.gabcytn.strangerstrings.DTO.UserPrincipal;
@@ -32,16 +33,19 @@ public class ConversationValidationAspect {
   private final UserService userService;
   private final AnonymousConversationDao anonymousConversationDao;
   private final ConversationDao conversationDao;
+  private final UsersInterestDao usersInterestDao;
 
   public ConversationValidationAspect(
       RedisQueueService redisQueueService,
       UserService userService,
       AnonymousConversationDao anonymousConversationDao,
-      ConversationDao conversationDao) {
+      ConversationDao conversationDao,
+      UsersInterestDao usersInterestDao) {
     this.redisQueueService = redisQueueService;
     this.userService = userService;
     this.anonymousConversationDao = anonymousConversationDao;
     this.conversationDao = conversationDao;
+    this.usersInterestDao = usersInterestDao;
   }
 
   @Around("@annotation(com.gabcytn.strangerstrings.Aspect.Annotation.ToValidate)")
@@ -92,5 +96,21 @@ public class ConversationValidationAspect {
     }
 
     return null;
+  }
+
+  @Around("@annotation(com.gabcytn.strangerstrings.Aspect.Annotation.NoDuplicateRequest)")
+  public Object validateNoDuplicateMatchRequest(ProceedingJoinPoint pjp) throws Throwable {
+    Object[] args = pjp.getArgs();
+    Principal principal;
+    try {
+      principal = (Principal) args[1];
+    } catch (RuntimeException e) {
+      LOG.info("Error casting args[1] to java.security.Principal");
+      return null;
+    }
+    boolean isDuplicate = usersInterestDao.existsById(UUID.fromString(principal.getName()));
+    LOG.info("Is duplicate: {}", isDuplicate);
+
+    return isDuplicate ? null : pjp.proceed(args);
   }
 }

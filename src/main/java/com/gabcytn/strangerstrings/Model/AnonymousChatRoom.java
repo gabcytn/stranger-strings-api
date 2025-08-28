@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
 
+@RedisHash(value = "anonChatRoom")
 public class AnonymousChatRoom {
   @TimeToLive private final Long expiresAt = 68L * 60 * 24 * 3; // 3 days TTL
   @Id private UUID conversationId;

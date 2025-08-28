@@ -35,7 +35,8 @@ public class WebSocketMessagingController {
 
   @NoDuplicateRequest
   @MessageMapping("/authenticated/matcher")
-  public void authenticatedMatcher(ChatInitiationDto reqBody, Principal principal) {
+  public void authenticatedMatcher(
+      @RequestBody @Valid ChatInitiationDto reqBody, Principal principal) {
     this.match(
         authMessagingService,
         reqBody.getInterests(),

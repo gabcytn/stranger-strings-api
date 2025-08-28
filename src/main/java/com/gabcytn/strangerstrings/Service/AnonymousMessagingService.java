@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,7 +25,8 @@ public class AnonymousMessagingService implements MessagingService {
   private final AnonymousChatRoomDao anonymousChatRoomDao;
 
   public AnonymousMessagingService(
-      QueueService queueService, AnonymousChatRoomDao anonymousChatRoomDao) {
+      @Qualifier("AnonQueueService") QueueService queueService,
+      AnonymousChatRoomDao anonymousChatRoomDao) {
     this.queueService = queueService;
     this.anonymousChatRoomDao = anonymousChatRoomDao;
   }
@@ -34,12 +36,14 @@ public class AnonymousMessagingService implements MessagingService {
       List<String> interests, UUID userId) {
     List<String> withoutMatches = new ArrayList<>();
     for (String interest : interests) {
-      if (queueService.isInterestSetEmpty(interest)) {
+      UUID matchedSessionId;
+      try {
+        matchedSessionId =
+            queueService.getRandomMemberFromInterest(interest).orElseThrow(RuntimeException::new);
+      } catch (RuntimeException e) {
         withoutMatches.add(interest);
         continue;
       }
-
-      UUID matchedSessionId = queueService.getRandomMemberFromInterest(interest);
       if (matchedSessionId.equals(userId)) return Optional.empty();
 
       queueService.removeUserFromInterests(userId);

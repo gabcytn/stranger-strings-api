@@ -2,6 +2,7 @@ package com.gabcytn.strangerstrings.Service.Interface;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface QueueService {
@@ -14,4 +15,6 @@ public interface QueueService {
   void placeUserInInterestsSet(List<String> interests, UUID userId);
 
   void placeUserInInterestsSet(String interest, UUID userId);
+
+  Optional<Set<String>> findInterestsByUserId(UUID userId);
 }

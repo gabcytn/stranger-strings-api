@@ -3,12 +3,27 @@ package com.gabcytn.strangerstrings.Service;
 import com.gabcytn.strangerstrings.Service.Interface.QueueService;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
-import org.springframework.stereotype.Service;
 
-// TODO: implement methods
-@Service
-public class QueueServiceImpl implements QueueService {
+// TODO: implementation
+// TODO: get api key as prefix.
+public abstract class AbstractQueueService implements QueueService {
+  private final String prefixKey;
+
+  protected AbstractQueueService(String prefixKey) {
+    this.prefixKey = prefixKey;
+  }
+
+  // concrete classes shall use this constructor
+  protected AbstractQueueService(String apiKey, String prefixKey) {
+    this.prefixKey = prefixKey + apiKey;
+  }
+
+  protected String namespaced(String interest) {
+    return prefixKey + interest;
+  }
+
   @Override
   public void removeUserFromInterests(UUID userId) {}
 
@@ -27,4 +42,9 @@ public class QueueServiceImpl implements QueueService {
 
   @Override
   public void placeUserInInterestsSet(String interest, UUID userId) {}
+
+  @Override
+  public Optional<Set<String>> findInterestsByUserId(UUID userId) {
+    return Optional.empty();
+  }
 }

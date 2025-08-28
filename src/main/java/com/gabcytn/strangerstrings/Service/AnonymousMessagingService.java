@@ -7,7 +7,6 @@ import com.gabcytn.strangerstrings.Model.ConversationMember;
 import com.gabcytn.strangerstrings.Model.QueueMatchedResponse;
 import com.gabcytn.strangerstrings.Service.Interface.MessagingService;
 import com.gabcytn.strangerstrings.Service.Interface.QueueService;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +33,7 @@ public class AnonymousMessagingService implements MessagingService {
   @Override
   public Optional<QueueMatchedResponse<? extends ConversationMember>> match(
       List<String> interests, UUID userId) {
-    List<String> withoutMatches = new ArrayList<>();
+    Set<String> withoutMatches = new HashSet<>();
     for (String interest : interests) {
       UUID matchedSessionId;
       try {

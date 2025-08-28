@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
+@Qualifier("AnonMessagingService")
 public class AnonymousMessagingService implements MessagingService {
   private static final Logger LOG = LoggerFactory.getLogger(AnonymousMessagingService.class);
   private final QueueService queueService;
@@ -35,15 +36,12 @@ public class AnonymousMessagingService implements MessagingService {
       List<String> interests, UUID userId) {
     Set<String> withoutMatches = new HashSet<>();
     for (String interest : interests) {
-      UUID matchedSessionId;
-      try {
-        matchedSessionId =
-            queueService.getRandomMemberFromInterest(interest).orElseThrow(RuntimeException::new);
-      } catch (RuntimeException e) {
+      Optional<UUID> member = queueService.getRandomMemberFromInterest(interest);
+      if (member.isEmpty()) {
         withoutMatches.add(interest);
         continue;
       }
-      if (matchedSessionId.equals(userId)) return Optional.empty();
+      UUID matchedSessionId = member.get();
 
       queueService.removeUserFromInterests(userId);
       queueService.removeUserFromInterests(matchedSessionId);

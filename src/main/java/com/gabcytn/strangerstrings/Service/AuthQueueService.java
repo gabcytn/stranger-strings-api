@@ -10,6 +10,6 @@ import org.springframework.stereotype.Service;
 public class AuthQueueService extends AbstractQueueService {
   protected AuthQueueService(
       RedisTemplate<String, Object> redisTemplate, UsersInterestDao usersInterestDao) {
-    super("auth:", redisTemplate, usersInterestDao);
+    super("authInterestSet:", redisTemplate, usersInterestDao);
   }
 }

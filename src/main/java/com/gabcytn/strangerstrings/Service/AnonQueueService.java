@@ -10,6 +10,6 @@ import org.springframework.stereotype.Service;
 public class AnonQueueService extends AbstractQueueService {
   protected AnonQueueService(
       RedisTemplate<String, Object> redisTemplate, UsersInterestDao usersInterestDao) {
-    super("anon:", redisTemplate, usersInterestDao);
+    super("anonInterestSet:", redisTemplate, usersInterestDao);
   }
 }

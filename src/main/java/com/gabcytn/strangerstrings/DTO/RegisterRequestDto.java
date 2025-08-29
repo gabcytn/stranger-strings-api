@@ -1,15 +1,16 @@
 package com.gabcytn.strangerstrings.DTO;
 
+import com.gabcytn.strangerstrings.Entity.User;
 import com.gabcytn.strangerstrings.Validation.PasswordsMatch;
 import com.gabcytn.strangerstrings.Validation.UniqueEmail;
 import com.gabcytn.strangerstrings.Validation.UniqueUsername;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @PasswordsMatch
-public class RegisterRequestDto
-{
+public class RegisterRequestDto {
   @NotNull(message = "Email is required.")
   @Email
   @UniqueEmail(message = "Email already taken.")
@@ -27,7 +28,8 @@ public class RegisterRequestDto
   @NotNull(message = "Confirm password is required.")
   private String confirmPassword;
 
-  public RegisterRequestDto(String email, String username, String password, String confirmPassword) {
+  public RegisterRequestDto(
+      String email, String username, String password, String confirmPassword) {
     this.email = email;
     this.username = username;
     this.password = password;
@@ -64,5 +66,13 @@ public class RegisterRequestDto
 
   public void setConfirmPassword(String confirmPassword) {
     this.confirmPassword = confirmPassword;
+  }
+
+  public User toUserEntity(PasswordEncoder passwordEncoder) {
+    User user = new User();
+    user.setEmail(this.email);
+    user.setUsername(this.username);
+    user.setPassword(passwordEncoder.encode(this.password));
+    return user;
   }
 }

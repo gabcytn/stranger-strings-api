@@ -1,9 +1,9 @@
 package com.gabcytn.strangerstrings.Config;
 
 import com.gabcytn.strangerstrings.DAO.UserDao;
-import com.gabcytn.strangerstrings.Model.StompPrincipal;
 import com.gabcytn.strangerstrings.DTO.UserPrincipal;
 import com.gabcytn.strangerstrings.Entity.User;
+import com.gabcytn.strangerstrings.Model.StompPrincipal;
 import java.security.Principal;
 import java.util.Map;
 import java.util.Optional;
@@ -35,10 +35,10 @@ public class CustomHandshakeHandler extends DefaultHandshakeHandler {
 
       UUID userId = getUserId(authentication).orElseThrow(RuntimeException::new);
       LOG.info("User is authenticated");
-      return StompPrincipal.ofAuthenticated(userId);
+      return new StompPrincipal(userId);
     } catch (RuntimeException e) {
       LOG.info("No retrieved user; user is anonymous");
-      return StompPrincipal.ofAnonymous(UUID.randomUUID());
+      return new StompPrincipal(UUID.randomUUID());
     }
   }
 
@@ -52,6 +52,7 @@ public class CustomHandshakeHandler extends DefaultHandshakeHandler {
       return optionalUser.map(User::getId);
     }
 
+    LOG.debug("Principal is not an instanceof UserPrincipal.");
     return Optional.empty();
   }
 }

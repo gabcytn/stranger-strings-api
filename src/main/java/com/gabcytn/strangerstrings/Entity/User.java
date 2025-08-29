@@ -40,6 +40,9 @@ public class User {
   @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
   private Set<Message> messages;
 
+  @ManyToMany(mappedBy = "members")
+  private Set<Conversation> conversations;
+
   public UUID getId() {
     return id;
   }
@@ -110,6 +113,14 @@ public class User {
 
   public void setMessages(Set<Message> messages) {
     this.messages = messages;
+  }
+
+  public Set<Conversation> getConversations() {
+    return conversations;
+  }
+
+  public void setConversations(Set<Conversation> conversations) {
+    this.conversations = conversations;
   }
 
   @Override

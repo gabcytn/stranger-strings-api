@@ -1,11 +1,11 @@
 package com.gabcytn.strangerstrings.Exception.Handler;
 
 import com.gabcytn.strangerstrings.DTO.WebSocketErrorResponse;
+import com.gabcytn.strangerstrings.Exception.ConversationNotFoundException;
+import com.gabcytn.strangerstrings.Exception.NoInterestMatchException;
+import com.gabcytn.strangerstrings.Exception.NonConversationMemberException;
 import java.security.Principal;
 import java.util.stream.Collectors;
-
-import com.gabcytn.strangerstrings.Exception.ConversationNotFoundException;
-import com.gabcytn.strangerstrings.Exception.NonConversationMemberException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -42,24 +42,27 @@ public class WebSocketExceptionHandler {
 
   @MessageExceptionHandler(ConversationNotFoundException.class)
   public void handleConversationNotFound(
-          ConversationNotFoundException exception, Principal principal) {
+      ConversationNotFoundException exception, Principal principal) {
     LOG.error("{} raised.", ConversationNotFoundException.class.getName());
     WebSocketErrorResponse response =
-            new WebSocketErrorResponse(
-                    "Conversation not found.",
-                    MethodArgumentNotValidException.class.getName(),
-                    exception.getMessage());
+        new WebSocketErrorResponse(
+            "Conversation not found.",
+            MethodArgumentNotValidException.class.getName(),
+            exception.getMessage());
     messagingTemplate.convertAndSendToUser(principal.getName(), "/queue/errors", response);
   }
 
   @MessageExceptionHandler(NonConversationMemberException.class)
-  public void handleNonMemberConversation(NonConversationMemberException exception, Principal principal) {
+  public void handleNonMemberConversation(
+      NonConversationMemberException exception, Principal principal) {
     WebSocketErrorResponse errorResponse =
         new WebSocketErrorResponse(
-            "Forbidden.",
-                NonConversationMemberException.class.getName(),
-            exception.getMessage());
-    messagingTemplate.convertAndSendToUser(
-        principal.getName(), "/queue/errors", errorResponse);
+            "Forbidden.", NonConversationMemberException.class.getName(), exception.getMessage());
+    messagingTemplate.convertAndSendToUser(principal.getName(), "/queue/errors", errorResponse);
+  }
+
+  @MessageExceptionHandler(NoInterestMatchException.class)
+  public void handleNoInterestMatch(NoInterestMatchException exception) {
+    LOG.info("User has been placed in these interest queues: {}", exception.getInterests());
   }
 }

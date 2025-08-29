@@ -22,4 +22,8 @@ public class ConversationService {
   public Optional<Conversation> getConversation(UUID id) {
     return conversationDao.findById(id);
   }
+
+  public void save(Conversation conversation) {
+    conversationDao.save(conversation);
+  }
 }

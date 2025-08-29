@@ -6,7 +6,7 @@ import com.gabcytn.strangerstrings.Entity.Conversation;
 import com.gabcytn.strangerstrings.Entity.Message;
 import com.gabcytn.strangerstrings.Entity.User;
 import com.gabcytn.strangerstrings.Exception.ConversationNotFoundException;
-import com.gabcytn.strangerstrings.Model.ConversationMemberDetails;
+import com.gabcytn.strangerstrings.Model.AuthenticatedConversationMember;
 import com.gabcytn.strangerstrings.Model.PaginatedMessageContent;
 import com.gabcytn.strangerstrings.Service.ConversationService;
 import java.util.ArrayList;
@@ -33,7 +33,6 @@ public class MessageRestController {
 
   // FIX: minimize function size (i.e. split up)
   // TODO: handle 'not found' exceptions
-  // TODO: validate user is member of conversation (use aspect)
   @GetMapping
   public PaginatedMessageResponse get(
       @RequestParam UUID conversationId, @RequestParam int pageNumber) {
@@ -57,12 +56,10 @@ public class MessageRestController {
           content.setConversationId(message.getConversation().getId());
 
           User sender = message.getSender();
-          ConversationMemberDetails memberDetails =
-              new ConversationMemberDetails(
-                  "auth:" + sender.getId().toString(),
-                  sender.getUsername(),
-                  sender.getProfilePic());
-          content.setSender(memberDetails);
+          AuthenticatedConversationMember member =
+              new AuthenticatedConversationMember(
+                  sender.getId(), sender.getUsername(), sender.getProfilePic());
+          content.setSender(member);
           content.setDate(message.getCreatedAt());
           contents.add(content);
         });

@@ -1,6 +1,7 @@
 package com.gabcytn.strangerstrings.Service;
 
 import com.gabcytn.strangerstrings.DAO.Cache.AnonymousChatRoomDao;
+import com.gabcytn.strangerstrings.DTO.ChatMessage;
 import com.gabcytn.strangerstrings.Model.*;
 import com.gabcytn.strangerstrings.Service.Interface.MessagingService;
 import com.gabcytn.strangerstrings.Service.Interface.QueueService;

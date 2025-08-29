@@ -1,5 +1,7 @@
 package com.gabcytn.strangerstrings.Model;
 
+import com.gabcytn.strangerstrings.DTO.ChatMessage;
+
 import java.util.Set;
 import java.util.UUID;
 

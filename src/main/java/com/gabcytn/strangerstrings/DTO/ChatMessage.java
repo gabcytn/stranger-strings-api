@@ -1,4 +1,4 @@
-package com.gabcytn.strangerstrings.Model;
+package com.gabcytn.strangerstrings.DTO;
 
 import java.util.UUID;
 

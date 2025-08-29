@@ -1,6 +1,7 @@
 package com.gabcytn.strangerstrings.Service;
 
 import com.gabcytn.strangerstrings.DAO.MessageDao;
+import com.gabcytn.strangerstrings.DTO.ChatMessage;
 import com.gabcytn.strangerstrings.Entity.Conversation;
 import com.gabcytn.strangerstrings.Entity.Message;
 import com.gabcytn.strangerstrings.Entity.User;

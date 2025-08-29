@@ -1,20 +1,17 @@
 package com.gabcytn.strangerstrings.Aspect;
 
-import com.gabcytn.strangerstrings.DAO.Cache.AnonymousConversationDao;
 import com.gabcytn.strangerstrings.DAO.Cache.UsersInterestDao;
 import com.gabcytn.strangerstrings.DAO.ConversationDao;
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
 import com.gabcytn.strangerstrings.DTO.UserPrincipal;
-import com.gabcytn.strangerstrings.Entity.Conversation;
 import com.gabcytn.strangerstrings.Entity.User;
 import com.gabcytn.strangerstrings.Exception.ConversationNotFoundException;
 import com.gabcytn.strangerstrings.Exception.NonConversationMemberException;
 import com.gabcytn.strangerstrings.Exception.UserNotFoundException;
-import com.gabcytn.strangerstrings.Model.AnonymousConversation;
-import com.gabcytn.strangerstrings.Model.ConversationMemberDetails;
-import com.gabcytn.strangerstrings.Service.RedisQueueService;
 import com.gabcytn.strangerstrings.Service.UserService;
 import java.security.Principal;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -29,21 +26,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConversationValidationAspect {
   private static final Logger LOG = LoggerFactory.getLogger(ConversationValidationAspect.class);
-  private final RedisQueueService redisQueueService;
   private final UserService userService;
-  private final AnonymousConversationDao anonymousConversationDao;
   private final ConversationDao conversationDao;
   private final UsersInterestDao usersInterestDao;
 
   public ConversationValidationAspect(
-      RedisQueueService redisQueueService,
-      UserService userService,
-      AnonymousConversationDao anonymousConversationDao,
-      ConversationDao conversationDao,
-      UsersInterestDao usersInterestDao) {
-    this.redisQueueService = redisQueueService;
+      UserService userService, ConversationDao conversationDao, UsersInterestDao usersInterestDao) {
     this.userService = userService;
-    this.anonymousConversationDao = anonymousConversationDao;
     this.conversationDao = conversationDao;
     this.usersInterestDao = usersInterestDao;
   }
@@ -54,26 +43,7 @@ public class ConversationValidationAspect {
     if (args[0] instanceof StompSendPayload payload && args[1] instanceof Principal principal) {
       UUID conversationId = payload.getConversationId();
       String userId = principal.getName();
-      if (userId.startsWith("anon:")) {
-        AnonymousConversation conversation =
-            anonymousConversationDao
-                .findById(conversationId)
-                .orElseThrow(ConversationNotFoundException::new);
-        if (conversation.getParticipants().contains(new ConversationMemberDetails(userId))) {
-          return pjp.proceed();
-        }
-      } else {
-        Conversation conversation =
-            conversationDao
-                .findById(conversationId)
-                .orElseThrow(ConversationNotFoundException::new);
-        User user = userService.findUserById(UUID.fromString(userId)).orElseThrow();
-        if (conversation.getMembers().contains(user)) {
-          return pjp.proceed();
-        }
-      }
-      LOG.warn("User is not a part of the conversation.");
-      throw new NonConversationMemberException("User is not a member of the conversation");
+      // TODO: validate this
     }
 
     throw new RuntimeException("Incorrect parameter types.");
@@ -83,15 +53,20 @@ public class ConversationValidationAspect {
   public Object validate(ProceedingJoinPoint pjp) throws Throwable {
     if (pjp.getArgs()[0] instanceof UUID conversationId) {
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      // TODO: cache results
       User user =
           userService
               .findUserByUsername(((UserPrincipal) authentication.getPrincipal()).getUsername())
               .orElseThrow(UserNotFoundException::new);
-      if (redisQueueService.isMemberOfConversation(user.getId(), conversationId)) {
+      Set<User> members =
+          conversationDao
+              .findById(conversationId)
+              .orElseThrow(ConversationNotFoundException::new)
+              .getMembers();
+      Optional<User> member =
+          members.stream().filter(u -> u.getId().equals(user.getId())).findFirst();
+      if (member.isPresent()) {
         return pjp.proceed();
       }
-      LOG.warn("User is not a part of the conversation.");
       throw new NonConversationMemberException("User is not a member of the conversation");
     }
 

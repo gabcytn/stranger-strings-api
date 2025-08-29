@@ -1,20 +1,22 @@
 package com.gabcytn.strangerstrings.Model;
 
-public abstract class ChatMessage<T extends ConversationMember> {
-  private T sender;
+import java.util.UUID;
+
+public class ChatMessage {
+  private UUID senderId;
   private String message;
 
-  protected ChatMessage(T sender, String message) {
-    this.sender = sender;
+  public ChatMessage(UUID senderId, String message) {
+    this.senderId = senderId;
     this.message = message;
   }
 
-  public T getSender() {
-    return sender;
+  public UUID getSenderId() {
+    return senderId;
   }
 
-  public void setSender(T sender) {
-    this.sender = sender;
+  public void setSenderId(UUID senderId) {
+    this.senderId = senderId;
   }
 
   public String getMessage() {

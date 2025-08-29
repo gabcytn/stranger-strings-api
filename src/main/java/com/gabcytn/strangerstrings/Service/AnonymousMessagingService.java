@@ -5,6 +5,7 @@ import com.gabcytn.strangerstrings.Model.*;
 import com.gabcytn.strangerstrings.Service.Interface.MessagingService;
 import com.gabcytn.strangerstrings.Service.Interface.QueueService;
 import java.util.*;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Qualifier("AnonMessagingService")
-public class AnonymousMessagingService implements MessagingService<AnonChatMessage> {
+public class AnonymousMessagingService implements MessagingService {
   private static final Logger LOG = LoggerFactory.getLogger(AnonymousMessagingService.class);
   private final QueueService queueService;
   private final AnonymousChatRoomDao anonymousChatRoomDao;
@@ -56,14 +57,14 @@ public class AnonymousMessagingService implements MessagingService<AnonChatMessa
   }
 
   @Override
-  public AnonChatMessage chat(UUID conversationId, UUID senderId, String body) {
+  public MessageAndReceivers chat(UUID conversationId, UUID senderId, String body) {
     Optional<AnonymousChatRoom> chatRoom = anonymousChatRoomDao.findById(conversationId);
     if (chatRoom.isEmpty()) {
       LOG.error("Conversation id invalid.");
       throw new RuntimeException("Invalid conversation id.");
     }
     AnonymousChatRoom conversation = chatRoom.get();
-    List<AnonChatMessage> messages = conversation.getMessages();
+    List<ChatMessage> messages = conversation.getMessages();
 
     Optional<ConversationMember> conversationMember =
         conversation.getParticipants().stream().filter(p -> p.getId().equals(senderId)).findFirst();
@@ -72,12 +73,16 @@ public class AnonymousMessagingService implements MessagingService<AnonChatMessa
       throw new RuntimeException("Sender not a member of the conversation.");
     }
 
-    AnonChatMessage anonChatMessage = new AnonChatMessage(conversationMember.get(), body);
-    messages.add(anonChatMessage);
+    ChatMessage chatMessage = new ChatMessage(senderId, body);
+    messages.add(chatMessage);
 
     conversation.setMessages(messages);
     anonymousChatRoomDao.save(conversation);
 
-    return anonChatMessage;
+    Set<UUID> receivers =
+        chatRoom.get().getParticipants().stream()
+            .map(ConversationMember::getId)
+            .collect(Collectors.toSet());
+    return new MessageAndReceivers(chatMessage, receivers);
   }
 }

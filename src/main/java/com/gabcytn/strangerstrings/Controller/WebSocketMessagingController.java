@@ -3,15 +3,11 @@ package com.gabcytn.strangerstrings.Controller;
 import com.gabcytn.strangerstrings.Aspect.Annotation.NoDuplicateRequest;
 import com.gabcytn.strangerstrings.DTO.ChatInitiationDto;
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
-import com.gabcytn.strangerstrings.Model.ConversationMember;
-import com.gabcytn.strangerstrings.Model.QueueMatchedResponse;
+import com.gabcytn.strangerstrings.Model.*;
 import com.gabcytn.strangerstrings.Service.Interface.MessagingService;
 import jakarta.validation.Valid;
 import java.security.Principal;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -75,24 +71,27 @@ public class WebSocketMessagingController {
 
   @MessageMapping("/authenticated/chat.send")
   public void authenticatedMessage(StompSendPayload reqBody, Principal principal) {
-    this.message(
-        authMessagingService,
-        reqBody.getConversationId(),
-        UUID.fromString(principal.getName()),
-        reqBody.getMessage());
+    MessageAndReceivers response =
+        authMessagingService.chat(
+            reqBody.getConversationId(),
+            UUID.fromString(principal.getName()),
+            reqBody.getMessage());
+    this.sendMessage(response.getReceivers(), response.getChatMessage());
   }
 
   @MessageMapping("/anonymous/chat.send")
   public void anonymousMessage(StompSendPayload reqBody, Principal principal) {
-    this.message(
-        anonMessagingService,
-        reqBody.getConversationId(),
-        UUID.fromString(principal.getName()),
-        reqBody.getMessage());
+    MessageAndReceivers response =
+        anonMessagingService.chat(
+            reqBody.getConversationId(),
+            UUID.fromString(principal.getName()),
+            reqBody.getMessage());
+    this.sendMessage(response.getReceivers(), response.getChatMessage());
   }
 
-  private void message(
-      MessagingService messagingService, UUID conversationId, UUID senderId, String message) {
-    messagingService.chat(conversationId, senderId, message);
+  private void sendMessage(Set<UUID> receivers, Object payload) {
+    for (UUID receiver : receivers) {
+      simpMessagingTemplate.convertAndSendToUser(receiver.toString(), "/queue/chat", payload);
+    }
   }
 }

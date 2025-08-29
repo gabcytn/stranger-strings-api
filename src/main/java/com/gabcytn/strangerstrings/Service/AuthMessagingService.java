@@ -5,13 +5,11 @@ import com.gabcytn.strangerstrings.Entity.Conversation;
 import com.gabcytn.strangerstrings.Entity.Message;
 import com.gabcytn.strangerstrings.Entity.User;
 import com.gabcytn.strangerstrings.Exception.UserNotFoundException;
-import com.gabcytn.strangerstrings.Model.AuthChatMessage;
-import com.gabcytn.strangerstrings.Model.AuthenticatedConversationMember;
-import com.gabcytn.strangerstrings.Model.ConversationMember;
-import com.gabcytn.strangerstrings.Model.QueueMatchedResponse;
+import com.gabcytn.strangerstrings.Model.*;
 import com.gabcytn.strangerstrings.Service.Interface.MessagingService;
 import com.gabcytn.strangerstrings.Service.Interface.QueueService;
 import java.util.*;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -19,7 +17,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Qualifier("AuthMessagingService")
-public class AuthMessagingService implements MessagingService<AuthChatMessage> {
+public class AuthMessagingService implements MessagingService {
   private static final Logger LOG = LoggerFactory.getLogger(AuthMessagingService.class);
   private final QueueService queueService;
   private final UserService userService;
@@ -83,7 +81,7 @@ public class AuthMessagingService implements MessagingService<AuthChatMessage> {
   }
 
   @Override
-  public AuthChatMessage chat(UUID conversationId, UUID senderId, String body) {
+  public MessageAndReceivers chat(UUID conversationId, UUID senderId, String body) {
     Optional<Conversation> conversation = conversationService.getConversation(conversationId);
     if (conversation.isEmpty()) {
       LOG.error("Invalid conversation id.");
@@ -99,8 +97,10 @@ public class AuthMessagingService implements MessagingService<AuthChatMessage> {
 
     messageDao.save(message);
 
-    AuthenticatedConversationMember conversationMember =
-        new AuthenticatedConversationMember(user.getId(), user.getUsername(), user.getProfilePic());
-    return new AuthChatMessage(conversationMember, body);
+    ChatMessage chatMessage = new ChatMessage(user.getId(), body);
+
+    Set<UUID> receivers =
+        conversation.get().getMembers().stream().map(User::getId).collect(Collectors.toSet());
+    return new MessageAndReceivers(chatMessage, receivers);
   }
 }

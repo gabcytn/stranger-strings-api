@@ -1,10 +1,7 @@
 package com.gabcytn.strangerstrings.Service;
 
 import com.gabcytn.strangerstrings.DAO.Cache.AnonymousChatRoomDao;
-import com.gabcytn.strangerstrings.Model.AnonymousChatMessage;
-import com.gabcytn.strangerstrings.Model.AnonymousChatRoom;
-import com.gabcytn.strangerstrings.Model.ConversationMember;
-import com.gabcytn.strangerstrings.Model.QueueMatchedResponse;
+import com.gabcytn.strangerstrings.Model.*;
 import com.gabcytn.strangerstrings.Service.Interface.MessagingService;
 import com.gabcytn.strangerstrings.Service.Interface.QueueService;
 import java.util.*;
@@ -15,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Qualifier("AnonMessagingService")
-public class AnonymousMessagingService implements MessagingService {
+public class AnonymousMessagingService implements MessagingService<AnonChatMessage> {
   private static final Logger LOG = LoggerFactory.getLogger(AnonymousMessagingService.class);
   private final QueueService queueService;
   private final AnonymousChatRoomDao anonymousChatRoomDao;
@@ -59,29 +56,28 @@ public class AnonymousMessagingService implements MessagingService {
   }
 
   @Override
-  public void chat(UUID conversationId, UUID senderId, String body) {
+  public AnonChatMessage chat(UUID conversationId, UUID senderId, String body) {
     Optional<AnonymousChatRoom> chatRoom = anonymousChatRoomDao.findById(conversationId);
     if (chatRoom.isEmpty()) {
       LOG.error("Conversation id invalid.");
       throw new RuntimeException("Invalid conversation id.");
     }
     AnonymousChatRoom conversation = chatRoom.get();
-    List<AnonymousChatMessage> messages = conversation.getMessages();
+    List<AnonChatMessage> messages = conversation.getMessages();
 
     Optional<ConversationMember> conversationMember =
-            conversation.getParticipants().stream()
-                    .filter(p -> p.getId().equals(senderId))
-                    .findFirst();
+        conversation.getParticipants().stream().filter(p -> p.getId().equals(senderId)).findFirst();
+    if (conversationMember.isEmpty()) {
+      LOG.error("Sender might not be a member of the conversation.");
+      throw new RuntimeException("Sender not a member of the conversation.");
+    }
 
-    conversationMember.ifPresent(p -> {
-      AnonymousChatMessage chatMessage = new AnonymousChatMessage(p, body);
-      messages.add(chatMessage);
+    AnonChatMessage anonChatMessage = new AnonChatMessage(conversationMember.get(), body);
+    messages.add(anonChatMessage);
 
-      conversation.setMessages(messages);
-      anonymousChatRoomDao.save(conversation);
+    conversation.setMessages(messages);
+    anonymousChatRoomDao.save(conversation);
 
-    });
-
-    // TODO: send message to members
+    return anonChatMessage;
   }
 }

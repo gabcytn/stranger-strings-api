@@ -13,7 +13,7 @@ public class AnonymousChatRoom {
   @TimeToLive private final Long expiresAt = 68L * 60 * 24 * 3; // 3 days TTL
   @Id private UUID conversationId;
   private Set<ConversationMember> participants;
-  private List<AnonymousChatMessage> messages;
+  private List<AnonChatMessage> messages;
 
   public AnonymousChatRoom(UUID conversationId, Set<ConversationMember> participants) {
     this.conversationId = conversationId;
@@ -37,11 +37,11 @@ public class AnonymousChatRoom {
     this.participants = participants;
   }
 
-  public List<AnonymousChatMessage> getMessages() {
+  public List<AnonChatMessage> getMessages() {
     return messages;
   }
 
-  public void setMessages(List<AnonymousChatMessage> messages) {
+  public void setMessages(List<AnonChatMessage> messages) {
     this.messages = messages;
   }
 }

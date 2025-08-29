@@ -5,6 +5,7 @@ import com.gabcytn.strangerstrings.Entity.Conversation;
 import com.gabcytn.strangerstrings.Entity.Message;
 import com.gabcytn.strangerstrings.Entity.User;
 import com.gabcytn.strangerstrings.Exception.UserNotFoundException;
+import com.gabcytn.strangerstrings.Model.AuthChatMessage;
 import com.gabcytn.strangerstrings.Model.AuthenticatedConversationMember;
 import com.gabcytn.strangerstrings.Model.ConversationMember;
 import com.gabcytn.strangerstrings.Model.QueueMatchedResponse;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Qualifier("AuthMessagingService")
-public class AuthMessagingService implements MessagingService {
+public class AuthMessagingService implements MessagingService<AuthChatMessage> {
   private static final Logger LOG = LoggerFactory.getLogger(AuthMessagingService.class);
   private final QueueService queueService;
   private final UserService userService;
@@ -82,26 +83,24 @@ public class AuthMessagingService implements MessagingService {
   }
 
   @Override
-  public void chat(UUID conversationId, UUID senderId, String body) {
+  public AuthChatMessage chat(UUID conversationId, UUID senderId, String body) {
     Optional<Conversation> conversation = conversationService.getConversation(conversationId);
     if (conversation.isEmpty()) {
       LOG.error("Invalid conversation id.");
-      return;
+      throw new RuntimeException();
     }
 
     Message message = new Message();
-    Optional<User> user = userService.findUserById(senderId);
-    if (user.isEmpty()) {
-      LOG.error("User not found.");
-      throw new UserNotFoundException();
-    }
+    User user = userService.findUserById(senderId).orElseThrow(UserNotFoundException::new);
 
     message.setConversation(conversation.get());
     message.setBody(body);
-    message.setSender(user.get());
+    message.setSender(user);
 
     messageDao.save(message);
 
-    // TODO: send message to members
+    AuthenticatedConversationMember conversationMember =
+        new AuthenticatedConversationMember(user.getId(), user.getUsername(), user.getProfilePic());
+    return new AuthChatMessage(conversationMember, body);
   }
 }

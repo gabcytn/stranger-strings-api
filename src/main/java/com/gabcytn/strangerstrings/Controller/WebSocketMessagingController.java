@@ -73,6 +73,26 @@ public class WebSocketMessagingController {
         });
   }
 
-  @MessageMapping
-  public void message(StompSendPayload reqBody, Principal principal) {}
+  @MessageMapping("/authenticated/chat.send")
+  public void authenticatedMessage(StompSendPayload reqBody, Principal principal) {
+    this.message(
+        authMessagingService,
+        reqBody.getConversationId(),
+        UUID.fromString(principal.getName()),
+        reqBody.getMessage());
+  }
+
+  @MessageMapping("/anonymous/chat.send")
+  public void anonymousMessage(StompSendPayload reqBody, Principal principal) {
+    this.message(
+        anonMessagingService,
+        reqBody.getConversationId(),
+        UUID.fromString(principal.getName()),
+        reqBody.getMessage());
+  }
+
+  private void message(
+      MessagingService messagingService, UUID conversationId, UUID senderId, String message) {
+    messagingService.chat(conversationId, senderId, message);
+  }
 }

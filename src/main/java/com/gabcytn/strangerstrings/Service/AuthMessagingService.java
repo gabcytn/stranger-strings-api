@@ -1,6 +1,8 @@
 package com.gabcytn.strangerstrings.Service;
 
+import com.gabcytn.strangerstrings.DAO.MessageDao;
 import com.gabcytn.strangerstrings.Entity.Conversation;
+import com.gabcytn.strangerstrings.Entity.Message;
 import com.gabcytn.strangerstrings.Entity.User;
 import com.gabcytn.strangerstrings.Exception.UserNotFoundException;
 import com.gabcytn.strangerstrings.Model.AuthenticatedConversationMember;
@@ -21,14 +23,17 @@ public class AuthMessagingService implements MessagingService {
   private final QueueService queueService;
   private final UserService userService;
   private final ConversationService conversationService;
+  private final MessageDao messageDao;
 
   public AuthMessagingService(
       @Qualifier("AuthQueueService") QueueService queueService,
       UserService userService,
-      ConversationService conversationService) {
+      ConversationService conversationService,
+      MessageDao messageDao) {
     this.queueService = queueService;
     this.userService = userService;
     this.conversationService = conversationService;
+    this.messageDao = messageDao;
   }
 
   @Override
@@ -77,5 +82,26 @@ public class AuthMessagingService implements MessagingService {
   }
 
   @Override
-  public void chat(Conversation conversation, UUID senderId, String body) {}
+  public void chat(UUID conversationId, UUID senderId, String body) {
+    Optional<Conversation> conversation = conversationService.getConversation(conversationId);
+    if (conversation.isEmpty()) {
+      LOG.error("Invalid conversation id.");
+      return;
+    }
+
+    Message message = new Message();
+    Optional<User> user = userService.findUserById(senderId);
+    if (user.isEmpty()) {
+      LOG.error("User not found.");
+      throw new UserNotFoundException();
+    }
+
+    message.setConversation(conversation.get());
+    message.setBody(body);
+    message.setSender(user.get());
+
+    messageDao.save(message);
+
+    // TODO: send message to members
+  }
 }

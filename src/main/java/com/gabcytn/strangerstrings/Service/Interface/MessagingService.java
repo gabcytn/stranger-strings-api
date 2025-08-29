@@ -1,6 +1,5 @@
 package com.gabcytn.strangerstrings.Service.Interface;
 
-import com.gabcytn.strangerstrings.Entity.Conversation;
 import com.gabcytn.strangerstrings.Model.ConversationMember;
 import com.gabcytn.strangerstrings.Model.QueueMatchedResponse;
 import java.util.List;
@@ -11,5 +10,5 @@ public interface MessagingService {
   Optional<QueueMatchedResponse<? extends ConversationMember>> match(
       List<String> interests, UUID userId);
 
-  void chat(Conversation conversation, UUID senderId, String body);
+  void chat(UUID conversationId, UUID senderId, String body);
 }

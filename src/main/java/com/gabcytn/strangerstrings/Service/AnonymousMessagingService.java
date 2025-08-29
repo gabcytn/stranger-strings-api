@@ -1,17 +1,13 @@
 package com.gabcytn.strangerstrings.Service;
 
 import com.gabcytn.strangerstrings.DAO.Cache.AnonymousChatRoomDao;
-import com.gabcytn.strangerstrings.Entity.Conversation;
+import com.gabcytn.strangerstrings.Model.AnonymousChatMessage;
 import com.gabcytn.strangerstrings.Model.AnonymousChatRoom;
 import com.gabcytn.strangerstrings.Model.ConversationMember;
 import com.gabcytn.strangerstrings.Model.QueueMatchedResponse;
 import com.gabcytn.strangerstrings.Service.Interface.MessagingService;
 import com.gabcytn.strangerstrings.Service.Interface.QueueService;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -63,5 +59,29 @@ public class AnonymousMessagingService implements MessagingService {
   }
 
   @Override
-  public void chat(Conversation conversation, UUID senderId, String body) {}
+  public void chat(UUID conversationId, UUID senderId, String body) {
+    Optional<AnonymousChatRoom> chatRoom = anonymousChatRoomDao.findById(conversationId);
+    if (chatRoom.isEmpty()) {
+      LOG.error("Conversation id invalid.");
+      throw new RuntimeException("Invalid conversation id.");
+    }
+    AnonymousChatRoom conversation = chatRoom.get();
+    List<AnonymousChatMessage> messages = conversation.getMessages();
+
+    Optional<ConversationMember> conversationMember =
+            conversation.getParticipants().stream()
+                    .filter(p -> p.getId().equals(senderId))
+                    .findFirst();
+
+    conversationMember.ifPresent(p -> {
+      AnonymousChatMessage chatMessage = new AnonymousChatMessage(p, body);
+      messages.add(chatMessage);
+
+      conversation.setMessages(messages);
+      anonymousChatRoomDao.save(conversation);
+
+    });
+
+    // TODO: send message to members
+  }
 }

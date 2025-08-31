@@ -6,7 +6,7 @@ import java.util.UUID;
 public class PaginatedMessageContent {
   private Integer id;
   private String body;
-  private AuthenticatedConversationMember sender;
+  private UUID sender;
   private UUID conversationId;
   private Date date;
 
@@ -26,11 +26,11 @@ public class PaginatedMessageContent {
     this.body = body;
   }
 
-  public AuthenticatedConversationMember getSender() {
+  public UUID getSender() {
     return sender;
   }
 
-  public void setSender(AuthenticatedConversationMember sender) {
+  public void setSender(UUID sender) {
     this.sender = sender;
   }
 

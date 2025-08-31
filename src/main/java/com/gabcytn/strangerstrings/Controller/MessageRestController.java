@@ -56,10 +56,7 @@ public class MessageRestController {
           content.setConversationId(message.getConversation().getId());
 
           User sender = message.getSender();
-          AuthenticatedConversationMember member =
-              new AuthenticatedConversationMember(
-                  sender.getId(), sender.getUsername(), sender.getProfilePic());
-          content.setSender(member);
+          content.setSender(sender.getId());
           content.setDate(message.getCreatedAt());
           contents.add(content);
         });

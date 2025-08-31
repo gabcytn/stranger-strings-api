@@ -1,6 +1,6 @@
 package com.gabcytn.strangerstrings.Service;
 
-import com.gabcytn.strangerstrings.DAO.Cache.UsersInterestDao;
+import com.gabcytn.strangerstrings.DAO.Redis.UsersInterestDao;
 import com.gabcytn.strangerstrings.Model.UsersInterest;
 import com.gabcytn.strangerstrings.Service.Interface.QueueService;
 import java.util.*;

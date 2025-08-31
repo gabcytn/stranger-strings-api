@@ -1,6 +1,6 @@
 package com.gabcytn.strangerstrings.Service;
 
-import com.gabcytn.strangerstrings.DAO.Cache.RefreshTokenCacheDao;
+import com.gabcytn.strangerstrings.DAO.Redis.RefreshTokenCacheDao;
 import com.gabcytn.strangerstrings.DAO.UserDao;
 import com.gabcytn.strangerstrings.DTO.*;
 import com.gabcytn.strangerstrings.Exception.*;

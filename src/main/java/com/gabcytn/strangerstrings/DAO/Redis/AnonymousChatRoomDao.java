@@ -1,4 +1,4 @@
-package com.gabcytn.strangerstrings.DAO.Cache;
+package com.gabcytn.strangerstrings.DAO.Redis;
 
 import com.gabcytn.strangerstrings.Model.AnonymousChatRoom;
 import java.util.UUID;

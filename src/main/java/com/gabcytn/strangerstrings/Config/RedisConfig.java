@@ -18,7 +18,7 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
-@EnableRedisRepositories(basePackages = "com.gabcytn.strangerstrings.DAO.Cache")
+@EnableRedisRepositories(basePackages = "com.gabcytn.strangerstrings.DAO.Redis")
 public class RedisConfig {
   @Bean
   @Primary

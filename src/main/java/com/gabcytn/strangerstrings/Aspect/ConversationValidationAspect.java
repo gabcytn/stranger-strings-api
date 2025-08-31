@@ -1,7 +1,7 @@
 package com.gabcytn.strangerstrings.Aspect;
 
-import com.gabcytn.strangerstrings.DAO.Cache.AnonymousChatRoomDao;
-import com.gabcytn.strangerstrings.DAO.Cache.UsersInterestDao;
+import com.gabcytn.strangerstrings.DAO.Redis.AnonymousChatRoomDao;
+import com.gabcytn.strangerstrings.DAO.Redis.UsersInterestDao;
 import com.gabcytn.strangerstrings.DAO.ConversationDao;
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
 import com.gabcytn.strangerstrings.DTO.UserPrincipal;

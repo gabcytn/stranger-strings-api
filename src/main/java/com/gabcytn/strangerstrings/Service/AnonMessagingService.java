@@ -1,6 +1,6 @@
 package com.gabcytn.strangerstrings.Service;
 
-import com.gabcytn.strangerstrings.DAO.Cache.AnonymousChatRoomDao;
+import com.gabcytn.strangerstrings.DAO.Redis.AnonymousChatRoomDao;
 import com.gabcytn.strangerstrings.DTO.ChatMessage;
 import com.gabcytn.strangerstrings.Model.*;
 import com.gabcytn.strangerstrings.Service.Interface.MessagingService;
@@ -14,12 +14,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Qualifier("AnonMessagingService")
-public class AnonymousMessagingService implements MessagingService {
-  private static final Logger LOG = LoggerFactory.getLogger(AnonymousMessagingService.class);
+public class AnonMessagingService implements MessagingService {
+  private static final Logger LOG = LoggerFactory.getLogger(AnonMessagingService.class);
   private final QueueService queueService;
   private final AnonymousChatRoomDao anonymousChatRoomDao;
 
-  public AnonymousMessagingService(
+  public AnonMessagingService(
       @Qualifier("AnonQueueService") QueueService queueService,
       AnonymousChatRoomDao anonymousChatRoomDao) {
     this.queueService = queueService;

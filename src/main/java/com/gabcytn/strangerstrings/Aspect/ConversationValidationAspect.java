@@ -1,13 +1,18 @@
 package com.gabcytn.strangerstrings.Aspect;
 
+import com.gabcytn.strangerstrings.DAO.Cache.AnonymousChatRoomDao;
 import com.gabcytn.strangerstrings.DAO.Cache.UsersInterestDao;
 import com.gabcytn.strangerstrings.DAO.ConversationDao;
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
 import com.gabcytn.strangerstrings.DTO.UserPrincipal;
+import com.gabcytn.strangerstrings.Entity.Conversation;
 import com.gabcytn.strangerstrings.Entity.User;
 import com.gabcytn.strangerstrings.Exception.ConversationNotFoundException;
 import com.gabcytn.strangerstrings.Exception.NonConversationMemberException;
 import com.gabcytn.strangerstrings.Exception.UserNotFoundException;
+import com.gabcytn.strangerstrings.Model.AnonymousChatRoom;
+import com.gabcytn.strangerstrings.Model.ConversationMember;
+import com.gabcytn.strangerstrings.Service.ConversationService;
 import com.gabcytn.strangerstrings.Service.UserService;
 import java.security.Principal;
 import java.util.Optional;
@@ -29,24 +34,74 @@ public class ConversationValidationAspect {
   private final UserService userService;
   private final ConversationDao conversationDao;
   private final UsersInterestDao usersInterestDao;
+  private final AnonymousChatRoomDao anonymousChatRoomDao;
+  private final ConversationService conversationService;
 
   public ConversationValidationAspect(
-      UserService userService, ConversationDao conversationDao, UsersInterestDao usersInterestDao) {
+      UserService userService,
+      ConversationDao conversationDao,
+      UsersInterestDao usersInterestDao,
+      AnonymousChatRoomDao anonymousChatRoomDao,
+      ConversationService conversationService) {
     this.userService = userService;
     this.conversationDao = conversationDao;
     this.usersInterestDao = usersInterestDao;
+    this.anonymousChatRoomDao = anonymousChatRoomDao;
+    this.conversationService = conversationService;
   }
 
-  @Around("@annotation(com.gabcytn.strangerstrings.Aspect.Annotation.ToValidate)")
+  @Around(
+      "execution(* com.gabcytn.strangerstrings.Controller.WebSocketMessagingController.anonymousMessage(..))")
   public Object validateIncomingAnonymousChatMessage(ProceedingJoinPoint pjp) throws Throwable {
     Object[] args = pjp.getArgs();
     if (args[0] instanceof StompSendPayload payload && args[1] instanceof Principal principal) {
-      UUID conversationId = payload.getConversationId();
-      String userId = principal.getName();
-      // TODO: validate this
+      Optional<AnonymousChatRoom> nullableChatRoom =
+          anonymousChatRoomDao.findById(payload.getConversationId());
+      if (nullableChatRoom.isEmpty()) return null;
+      AnonymousChatRoom chatRoom = nullableChatRoom.get();
+      Set<ConversationMember> members = chatRoom.getParticipants();
+      Optional<ConversationMember> member =
+          members.stream()
+              .filter(m -> m.getId().equals(UUID.fromString(principal.getName())))
+              .findFirst();
+
+      if (member.isPresent()) {
+        return pjp.proceed();
+      }
+
+      this.log(payload.getConversationId(), UUID.fromString(principal.getName()));
     }
 
-    throw new RuntimeException("Incorrect parameter types.");
+    return null;
+  }
+
+  @Around(
+      "execution(* com.gabcytn.strangerstrings.Controller.WebSocketMessagingController.authenticatedMessage(..))")
+  public Object validateIncomingAuthenticatedChatMessage(ProceedingJoinPoint pjp) throws Throwable {
+    Object[] args = pjp.getArgs();
+    if (args[0] instanceof StompSendPayload payload && args[1] instanceof Principal principal) {
+      Optional<Conversation> nullableConversation =
+          conversationService.getConversation(payload.getConversationId());
+      if (nullableConversation.isEmpty()) return null;
+      Conversation conversation = nullableConversation.get();
+      Set<User> members = conversation.getMembers();
+      Optional<User> user =
+          members.stream()
+              .filter(m -> m.getId().equals(UUID.fromString(principal.getName())))
+              .findFirst();
+      if (user.isPresent()) {
+        return pjp.proceed();
+      }
+
+      this.log(payload.getConversationId(), UUID.fromString(principal.getName()));
+    }
+
+    return null;
+  }
+
+  private void log(UUID conversationId, UUID userId) {
+    LOG.warn("Conversation id: {}", conversationId);
+    LOG.warn("User: {}", userId);
   }
 
   @Around("execution(* com.gabcytn.strangerstrings.Controller.MessageRestController.get(..))")

@@ -1,18 +1,17 @@
 package com.gabcytn.strangerstrings.Model;
 
+import com.gabcytn.strangerstrings.DTO.ChatMessage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
-import com.gabcytn.strangerstrings.DTO.ChatMessage;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
 
 @RedisHash(value = "anonChatRoom")
 public class AnonymousChatRoom {
-  @TimeToLive private final Long expiresAt = 68L * 60 * 24 * 3; // 3 days TTL
+  @TimeToLive private Long expiresAt = 68L * 60 * 24 * 3; // 3 days TTL
   @Id private UUID conversationId;
   private Set<ConversationMember> participants;
   private List<ChatMessage> messages;
@@ -45,5 +44,13 @@ public class AnonymousChatRoom {
 
   public void setMessages(List<ChatMessage> messages) {
     this.messages = messages;
+  }
+
+  public Long getExpiresAt() {
+    return expiresAt;
+  }
+
+  public void setExpiresAt(Long expiresAt) {
+    this.expiresAt = expiresAt;
   }
 }

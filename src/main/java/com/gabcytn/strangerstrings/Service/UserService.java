@@ -21,4 +21,8 @@ public class UserService {
   public Optional<User> findUserByUsername(String username) {
     return userDao.findByUsername(username);
   }
+
+  public boolean userExistsById(UUID id) {
+    return userDao.existsById(id);
+  }
 }

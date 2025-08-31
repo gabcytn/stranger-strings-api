@@ -1,8 +1,8 @@
 package com.gabcytn.strangerstrings.Aspect;
 
+import com.gabcytn.strangerstrings.DAO.ConversationDao;
 import com.gabcytn.strangerstrings.DAO.Redis.AnonymousChatRoomDao;
 import com.gabcytn.strangerstrings.DAO.Redis.UsersInterestDao;
-import com.gabcytn.strangerstrings.DAO.ConversationDao;
 import com.gabcytn.strangerstrings.DTO.StompSendPayload;
 import com.gabcytn.strangerstrings.DTO.UserPrincipal;
 import com.gabcytn.strangerstrings.Entity.Conversation;
@@ -142,5 +142,17 @@ public class ConversationValidationAspect {
     LOG.info("Is duplicate: {}", isDuplicate);
 
     return isDuplicate ? null : pjp.proceed(args);
+  }
+
+  @Around(
+      "execution(* com.gabcytn.strangerstrings.Controller.WebSocketMessagingController.authenticatedMatcher(..))")
+  public Object validateAuthenticatedMatcher(ProceedingJoinPoint pjp) throws Throwable {
+    if (pjp.getArgs()[1] instanceof Principal principal) {
+      if (userService.userExistsById(UUID.fromString(principal.getName()))) {
+        return pjp.proceed();
+      }
+    }
+    LOG.info("Anonymous user trying to match via authenticated matcher.");
+    return null;
   }
 }

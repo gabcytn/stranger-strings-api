@@ -1,6 +1,6 @@
 package com.gabcytn.strangerstrings.Config;
 
-import com.gabcytn.strangerstrings.DAO.UserDao;
+import com.gabcytn.strangerstrings.Service.UserService;
 import java.security.Principal;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -14,10 +14,10 @@ import org.springframework.messaging.support.ChannelInterceptor;
 
 public class TopicSubscriptionInterceptor implements ChannelInterceptor {
   private static final Logger LOG = LoggerFactory.getLogger(TopicSubscriptionInterceptor.class);
-  private final UserDao userDao;
+  private final UserService userService;
 
-  public TopicSubscriptionInterceptor(UserDao userDao) {
-    this.userDao = userDao;
+  public TopicSubscriptionInterceptor(UserService userService) {
+    this.userService = userService;
   }
 
   @Override
@@ -39,7 +39,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
       return false;
     }
 
-    boolean isUserAuthenticated = userDao.existsById(UUID.fromString(principal.getName()));
+    boolean isUserAuthenticated = userService.userExistsById(UUID.fromString(principal.getName()));
     boolean isChannelAuthenticated = topicDestination.contains("authenticated");
 
     if (!topicDestination.startsWith("/user")) return true;

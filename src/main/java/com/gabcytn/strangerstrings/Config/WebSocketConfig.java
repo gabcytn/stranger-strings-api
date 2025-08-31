@@ -1,6 +1,6 @@
 package com.gabcytn.strangerstrings.Config;
 
-import com.gabcytn.strangerstrings.DAO.UserDao;
+import com.gabcytn.strangerstrings.Service.UserService;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -12,11 +12,11 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   private final CustomHandshakeHandler handshakeHandler;
-  private final UserDao userDao;
+  private final UserService userService;
 
-  public WebSocketConfig(CustomHandshakeHandler handshakeHandler, UserDao userDao) {
+  public WebSocketConfig(CustomHandshakeHandler handshakeHandler, UserService userService) {
     this.handshakeHandler = handshakeHandler;
-    this.userDao = userDao;
+    this.userService = userService;
   }
 
   @Override
@@ -35,6 +35,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
   @Override
   public void configureClientInboundChannel(ChannelRegistration registration) {
-    registration.interceptors(new TopicSubscriptionInterceptor(userDao));
+    registration.interceptors(new TopicSubscriptionInterceptor(userService));
   }
 }

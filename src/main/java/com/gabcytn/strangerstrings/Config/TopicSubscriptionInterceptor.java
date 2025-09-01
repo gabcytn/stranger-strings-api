@@ -23,12 +23,13 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
     Principal userPrincipal = headerAccessor.getUser();
     if (userPrincipal == null || headerAccessor.getDestination() == null)
       throw new MessagingException("Principal/Destination is null.");
+    UUID userId = this.getUserId(userPrincipal);
     if (StompCommand.SUBSCRIBE.equals(headerAccessor.getCommand())) {
-      if (!validateSubscription(userPrincipal, headerAccessor.getDestination())) {
+      if (!validateSubscription(userId, headerAccessor.getDestination())) {
         throw new MessagingException("No permission for this topic.");
       }
     } else if (StompCommand.SEND.equals(headerAccessor.getCommand())) {
-      if (!validateSend(userPrincipal, headerAccessor.getDestination())) {
+      if (!validateSend(userId, headerAccessor.getDestination())) {
         throw new MessagingException("User is not allowed to send in this destination.");
       }
     }
@@ -36,8 +37,8 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
     return message;
   }
 
-  private boolean validateSubscription(Principal principal, String topicDestination) {
-    boolean isUserAuthenticated = userService.userExistsById(UUID.fromString(principal.getName()));
+  private boolean validateSubscription(UUID userId, String topicDestination) {
+    boolean isUserAuthenticated = this.getIsUserAuthenticated(userId);
     boolean isChannelAuthenticated = topicDestination.contains("authenticated");
 
     if (!topicDestination.startsWith("/user")) return true;
@@ -46,8 +47,16 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
     else return !isChannelAuthenticated;
   }
 
-  private boolean validateSend(Principal principal, String topicDestination) {
-    boolean isUserAuthenticated = userService.userExistsById(UUID.fromString(principal.getName()));
+  private boolean validateSend(UUID userId, String topicDestination) {
+    boolean isUserAuthenticated = this.getIsUserAuthenticated(userId);
     return !"/app/authenticated/matcher".equals(topicDestination) || isUserAuthenticated;
+  }
+
+  private UUID getUserId(Principal principal) {
+    return UUID.fromString(principal.getName());
+  }
+
+  private boolean getIsUserAuthenticated(UUID userId) {
+    return userService.userExistsById(userId);
   }
 }

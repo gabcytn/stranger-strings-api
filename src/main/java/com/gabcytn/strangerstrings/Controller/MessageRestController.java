@@ -37,8 +37,6 @@ public class MessageRestController {
   public PaginatedMessageResponse get(
       @RequestParam UUID conversationId, @RequestParam int pageNumber) {
     Pageable pageable = PageRequest.of(pageNumber, 10);
-    // TODO: use a caching service together with
-    // com.gabcytn.strangerstrings.Service.UserDetailsService
     Conversation conversation =
         conversationService
             .getConversation(conversationId)

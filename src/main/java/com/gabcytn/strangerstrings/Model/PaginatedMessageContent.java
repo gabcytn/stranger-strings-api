@@ -10,6 +10,15 @@ public class PaginatedMessageContent {
   private UUID conversationId;
   private Date date;
 
+  public PaginatedMessageContent(Integer id, String body, UUID sender, UUID conversationId, Date date)
+  {
+    this.id = id;
+    this.body = body;
+    this.sender = sender;
+    this.conversationId = conversationId;
+    this.date = date;
+  }
+
   public Integer getId() {
     return id;
   }

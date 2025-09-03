@@ -9,6 +9,11 @@ public class PaginatedMessageResponse {
   private List<PaginatedMessageContent> content;
   private Pageable pageable;
 
+  public PaginatedMessageResponse(List<PaginatedMessageContent> content, Pageable pageable) {
+    this.content = content;
+    this.pageable = pageable;
+  }
+
   public List<PaginatedMessageContent> getContent() {
     return content;
   }

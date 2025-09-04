@@ -5,4 +5,4 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface RefreshTokenCacheDao extends CrudRepository<RefreshTokenValidator, String> {}
+public interface RefreshTokenDao extends CrudRepository<RefreshTokenValidator, String> {}

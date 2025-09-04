@@ -1,6 +1,6 @@
 package com.gabcytn.strangerstrings.Service;
 
-import com.gabcytn.strangerstrings.DAO.Redis.RefreshTokenCacheDao;
+import com.gabcytn.strangerstrings.DAO.Redis.RefreshTokenDao;
 import com.gabcytn.strangerstrings.DAO.UserDao;
 import com.gabcytn.strangerstrings.DTO.*;
 import com.gabcytn.strangerstrings.Exception.*;
@@ -21,19 +21,19 @@ public class AuthenticationService {
   private final PasswordEncoder passwordEncoder;
   private final AuthenticationManager authenticationManager;
   private final JwtService jwtService;
-  private final RefreshTokenCacheDao refreshTokenCacheDao;
+  private final RefreshTokenDao refreshTokenDao;
 
   public AuthenticationService(
       UserDao userDao,
       PasswordEncoder passwordEncoder,
       AuthenticationManager authenticationManager,
       JwtService jwtService,
-      RefreshTokenCacheDao refreshTokenCacheDao) {
+      RefreshTokenDao refreshTokenDao) {
     this.userDao = userDao;
     this.passwordEncoder = passwordEncoder;
     this.authenticationManager = authenticationManager;
     this.jwtService = jwtService;
-    this.refreshTokenCacheDao = refreshTokenCacheDao;
+    this.refreshTokenDao = refreshTokenDao;
   }
 
   public void signup(RegisterRequestDto user) {
@@ -57,7 +57,7 @@ public class AuthenticationService {
       String generatedRefreshToken = jwtService.generateRefreshToken();
       RefreshTokenValidator tokenValidatorDto =
           new RefreshTokenValidator(generatedRefreshToken, user.getUsername(), user.getDeviceName());
-      refreshTokenCacheDao.save(tokenValidatorDto);
+      refreshTokenDao.save(tokenValidatorDto);
       jwtService.sendRefreshTokenInResponseCookie(generatedRefreshToken);
     }
     return new JwtResponseDto(token, jwtService.getExpirationTime());
@@ -66,16 +66,16 @@ public class AuthenticationService {
   public JwtResponseDto newJwt(String oldRefreshToken, String deviceName)
       throws RefreshTokenException, RefreshTokenNotFoundException {
     RefreshTokenValidator tokenValidator =
-        refreshTokenCacheDao
+        refreshTokenDao
             .findById(oldRefreshToken)
             .orElseThrow(RefreshTokenNotFoundException::new);
     if (!deviceName.equals(tokenValidator.getDeviceName()))
       throw new RefreshTokenException("Stored device name does not match request's device name");
     String jwt = jwtService.generateToken(tokenValidator.getUsername());
 
-    refreshTokenCacheDao.deleteById(oldRefreshToken);
+    refreshTokenDao.deleteById(oldRefreshToken);
     String newRefreshToken = jwtService.generateRefreshToken();
-    refreshTokenCacheDao.save(new RefreshTokenValidator(newRefreshToken, tokenValidator.getUsername(), tokenValidator.getDeviceName()));
+    refreshTokenDao.save(new RefreshTokenValidator(newRefreshToken, tokenValidator.getUsername(), tokenValidator.getDeviceName()));
     jwtService.sendRefreshTokenInResponseCookie(newRefreshToken);
     return new JwtResponseDto(jwt, jwtService.getExpirationTime());
   }

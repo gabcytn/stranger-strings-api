@@ -2,6 +2,7 @@ package com.gabcytn.strangerstrings.Config;
 
 import com.gabcytn.strangerstrings.Filter.JwtFilter;
 import com.gabcytn.strangerstrings.Service.UserDetailsServiceAuth;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,12 +18,18 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
   private final JwtFilter jwtFilter;
   private final UserDetailsService userDetailsService;
+  @Value("${cors.front-end.url}")
+  private String FRONTEND_URL;
 
   public SecurityConfig(UserDetailsServiceAuth userDetailsService, JwtFilter jwtFilter) {
     this.userDetailsService = userDetailsService;
@@ -40,6 +47,10 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
     // disable csrf
     httpSecurity.csrf(AbstractHttpConfigurer::disable);
+
+    httpSecurity.cors(httpSecurityCorsConfigurer -> {
+      httpSecurityCorsConfigurer.configurationSource(corsConfigurationSource());
+    });
 
     // disable http basic
     httpSecurity.httpBasic(AbstractHttpConfigurer::disable);
@@ -78,5 +89,18 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder(12);
+  }
+
+  private UrlBasedCorsConfigurationSource corsConfigurationSource () {
+    CorsConfiguration corsConfiguration = new CorsConfiguration();
+    corsConfiguration.addAllowedOrigin(FRONTEND_URL);
+    corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+    corsConfiguration.addAllowedHeader("Content-Type");
+    corsConfiguration.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", corsConfiguration);
+
+    return source;
   }
 }

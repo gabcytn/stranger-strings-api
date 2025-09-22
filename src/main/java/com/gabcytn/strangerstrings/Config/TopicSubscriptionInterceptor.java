@@ -21,10 +21,12 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
   public Message<?> preSend(Message<?> message, MessageChannel channel) {
     StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(message);
     Principal userPrincipal = headerAccessor.getUser();
-    if (userPrincipal == null || headerAccessor.getDestination() == null)
-      throw new MessagingException("Principal/Destination is null.");
+    if (userPrincipal == null)
+      throw new MessagingException("Principal is null.");
     UUID userId = this.getUserId(userPrincipal);
     if (StompCommand.SUBSCRIBE.equals(headerAccessor.getCommand())) {
+      if (headerAccessor.getDestination() == null)
+          throw new MessagingException("SUBSCRIBE frame has no destination header.");
       if (!validateSubscription(userId, headerAccessor.getDestination())) {
         throw new MessagingException("No permission for this topic.");
       }

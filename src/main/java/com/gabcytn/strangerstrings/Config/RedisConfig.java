@@ -52,19 +52,6 @@ public class RedisConfig {
   }
 
   @Bean
-  public RedisTemplate<String, Map<String, List<String>>> redisUsersInterestsMapTemplate(
-      LettuceConnectionFactory lettuceConnectionFactory) {
-    RedisTemplate<String, Map<String, List<String>>> template = new RedisTemplate<>();
-
-    template.setConnectionFactory(lettuceConnectionFactory);
-    template.setKeySerializer(StringRedisSerializer.UTF_8);
-    template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-    template.afterPropertiesSet();
-
-    return template;
-  }
-
-  @Bean
   public RedisCacheManager cacheManager(LettuceConnectionFactory connectionFactory) {
     RedisCacheConfiguration config =
         RedisCacheConfiguration.defaultCacheConfig()

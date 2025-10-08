@@ -67,13 +67,6 @@ public class AnonMessagingService implements MessagingService {
     AnonymousChatRoom conversation = chatRoom.get();
     List<ChatMessage> messages = conversation.getMessages();
 
-    Optional<ConversationMember> conversationMember =
-        conversation.getParticipants().stream().filter(p -> p.getId().equals(senderId)).findFirst();
-    if (conversationMember.isEmpty()) {
-      LOG.error("Sender might not be a member of the conversation.");
-      throw new RuntimeException("Sender not a member of the conversation.");
-    }
-
     ChatMessage chatMessage = new ChatMessage(senderId, body);
     messages.add(chatMessage);
 
@@ -85,5 +78,24 @@ public class AnonMessagingService implements MessagingService {
             .map(ConversationMember::getId)
             .collect(Collectors.toSet());
     return new MessageAndReceivers(chatMessage, receivers);
+  }
+
+  @Override
+  public void disconnectFromQueue(UUID userId) {
+    queueService.removeUserFromInterests(userId);
+  }
+
+  @Override
+  public Set<UUID> disconnectFromChat(UUID userId, UUID conversationId) {
+    Optional<AnonymousChatRoom> chatRoom = anonymousChatRoomDao.findById(conversationId);
+    if (chatRoom.isEmpty()) {
+      LOG.error("Cannot disconnect from chat. Conversation not found.");
+      throw new RuntimeException("Invalid conversation id.");
+    }
+
+    return chatRoom.get().getParticipants().stream()
+        .map(ConversationMember::getId)
+        .filter(id -> !id.equals(userId))
+        .collect(Collectors.toSet());
   }
 }

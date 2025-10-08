@@ -76,7 +76,7 @@ public class WebSocketMessagingController {
             reqBody.getConversationId(),
             UUID.fromString(principal.getName()),
             reqBody.getMessage());
-    this.sendMessage(response.getReceivers(), response.getChatMessage());
+    this.sendMessage(response.getReceivers(), response.getChatMessage(), "/queue/chat");
   }
 
   @MessageMapping("/anonymous/chat.send")
@@ -86,12 +86,38 @@ public class WebSocketMessagingController {
             reqBody.getConversationId(),
             UUID.fromString(principal.getName()),
             reqBody.getMessage());
-    this.sendMessage(response.getReceivers(), response.getChatMessage());
+    this.sendMessage(response.getReceivers(), response.getChatMessage(), "/queue/chat");
   }
 
-  private void sendMessage(Set<UUID> receivers, Object payload) {
+  private void sendMessage(Set<UUID> receivers, Object payload, String destination) {
     for (UUID receiver : receivers) {
-      simpMessagingTemplate.convertAndSendToUser(receiver.toString(), "/queue/chat", payload);
+      simpMessagingTemplate.convertAndSendToUser(receiver.toString(), destination, payload);
     }
+  }
+
+  @MessageMapping("/anonymous/matcher/disconnect")
+  public void anonymousQueueDisconnect(Principal principal) {
+    UUID id = UUID.fromString(principal.getName());
+    anonMessagingService.disconnectFromQueue(id);
+  }
+
+  @MessageMapping("/authenticated/matcher/disconnect")
+  public void authenticatedQueueDisconnect(Principal principal) {
+    UUID id = UUID.fromString(principal.getName());
+    authMessagingService.disconnectFromQueue(id);
+  }
+
+  @MessageMapping("/anonymous/chat.disconnect")
+  public void anonymousChatDisconnect(StompSendPayload payload, Principal principal) {
+    UUID id = UUID.fromString(principal.getName());
+    Set<UUID> receivers = anonMessagingService.disconnectFromChat(id, payload.getConversationId());
+    this.sendMessage(receivers, "Disconnect", "/queue/chat/disconnect");
+  }
+
+  @MessageMapping("/authenticated/chat.disconnect")
+  public void authenticatedChatDisconnect(StompSendPayload payload, Principal principal) {
+    UUID id = UUID.fromString(principal.getName());
+    Set<UUID> receivers = authMessagingService.disconnectFromChat(id, payload.getConversationId());
+    this.sendMessage(receivers, "Disconnect", "/queue/chat/disconnect");
   }
 }

@@ -104,4 +104,23 @@ public class AuthMessagingService implements MessagingService {
         conversation.get().getMembers().stream().map(User::getId).collect(Collectors.toSet());
     return new MessageAndReceivers(chatMessage, receivers);
   }
+
+  @Override
+  public void disconnectFromQueue(UUID userId) {
+    queueService.removeUserFromInterests(userId);
+  }
+
+  @Override
+  public Set<UUID> disconnectFromChat(UUID userId, UUID conversationId) {
+    Optional<Conversation> conversation = conversationService.getConversation(conversationId);
+    if (conversation.isEmpty()) {
+      LOG.error("Cannot disconnect from chat. Conversation not found.");
+      throw new RuntimeException();
+    }
+
+		return conversation.get().getMembers().stream()
+				.map(User::getId)
+				.filter(id -> !id.equals(userId))
+				.collect(Collectors.toSet());
+  }
 }

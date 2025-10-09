@@ -58,7 +58,7 @@ public abstract class AbstractQueueService implements QueueService {
   public Optional<UUID> getRandomMemberFromInterest(String interest) {
     Object randomMemberObject = redisTemplate.opsForSet().randomMember(this.namespaced(interest));
     if (randomMemberObject == null) { // disregard intellij warning, condition is NOT always false.
-      LOG.info("OBJECT IS NULL!!!");
+      LOG.info("Random member from interest set IS null");
 			return Optional.empty();
 		}
     try {

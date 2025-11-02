@@ -16,13 +16,18 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 @Service
 public class JwtService {
+  private static final Logger LOG = LoggerFactory.getLogger(JwtService.class);
   private final HttpServletResponse response;
+
 
   @Value("${security.jwt.secret-key}")
   private String secretKey;
@@ -105,8 +110,8 @@ public class JwtService {
       byte[] hash = messageDigest.digest(text.getBytes(StandardCharsets.UTF_8));
       return Base64.getEncoder().encodeToString(hash);
     } catch (NoSuchAlgorithmException exception) {
-      System.err.println("Error generating refresh token");
-      System.err.println(exception.getMessage());
+      LOG.error("Error generating refresh token");
+      LOG.error(exception.getMessage());
       return "";
     }
   }

@@ -7,6 +7,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +22,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
+  private static final Logger LOG = LoggerFactory.getLogger(JwtFilter.class);
   private final HandlerExceptionResolver handlerExceptionResolver;
   private final JwtService jwtService;
   private final UserDetailsService userDetailsService;
@@ -38,7 +42,7 @@ public class JwtFilter extends OncePerRequestFilter {
           throws ServletException, IOException {
     final String authorizationHeader = request.getHeader("Authorization");
     if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-      System.err.println("No auth header / doesn't start with Bearer");
+      LOG.info("No auth header / doesn't start with Bearer");
       filterChain.doFilter(request, response);
       return;
     }
@@ -49,7 +53,7 @@ public class JwtFilter extends OncePerRequestFilter {
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
       // early return if email is invalid or already authenticated
       if (username == null || authentication != null) {
-        System.err.println("user email is null OR authentication is NOT NULL");
+        LOG.info("user email is null OR authentication is NOT NULL");
         filterChain.doFilter(request, response);
         return;
       }
@@ -58,7 +62,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
       // early return if token is invalid
       if (!jwtService.isTokenValid(token, userDetails)) {
-        System.err.println("Token is invalid");
+        LOG.info("Token is invalid");
         filterChain.doFilter(request, response);
         return;
       }
@@ -70,8 +74,8 @@ public class JwtFilter extends OncePerRequestFilter {
       SecurityContextHolder.getContext().setAuthentication(authToken);
       filterChain.doFilter(request, response);
     } catch (Exception e) {
-      System.err.println("Error in jwt filter");
-      System.err.println(e.getMessage());
+      LOG.error("Error in jwt filter");
+      LOG.error(e.getMessage());
       handlerExceptionResolver.resolveException(request, response, null, e);
     }
   }

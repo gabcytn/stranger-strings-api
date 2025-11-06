@@ -1,0 +1,37 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    networks:
+      - my-network
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: gabcytn
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: stranger_strings
+    ports:
+      - "5555:5432"
+    networks:
+      - my-network
+    volumes:
+      - postgres-ss-data:/var/lib/postgresql
+
+  redis-server:
+    image: redis:latest
+    ports:
+      - "6380:6379"
+    networks:
+      - my-network
+    volumes:
+      - redis-ss-data:/var/lib/redis
+
+networks:
+  my-network:
+    driver: bridge
+
+volumes:
+  postgres-ss-data:
+  redis-ss-data:

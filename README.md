@@ -44,8 +44,8 @@ Redis is used to efficiently manage interest-based queues:
 
 Example structure in Redis:  
 ```txt
-interest:anon:sports -> {user1, user2, user3}
-interest:auth:music  -> {user4, user5}
+anonInterestSet:sports -> {user1, user2, user3}
+authInterestSet:music  -> {user4, user5}
 ```
 
 ## 🚀 Future Roadmap

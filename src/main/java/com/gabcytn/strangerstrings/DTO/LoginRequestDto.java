@@ -6,15 +6,15 @@ import jakarta.validation.constraints.NotNull;
 public class LoginRequestDto
 {
   @NotNull(message = "Username is required.")
-  @NotBlank(message = "Username must not be blank")
+  @NotBlank(message = "Username must not be blank.")
   private String username;
 
   @NotNull(message = "Password is required.")
-  @NotBlank(message = "Password must not be blank")
+  @NotBlank(message = "Password must not be blank.")
   private String password;
 
   @NotNull(message = "Device name is required.")
-  @NotBlank(message = "Device name must not be blank")
+  @NotBlank(message = "Device name must not be blank.")
   private String deviceName;
 
   public LoginRequestDto(String username, String password, String deviceName) {

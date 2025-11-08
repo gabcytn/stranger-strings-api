@@ -1,7 +1,8 @@
 package com.gabcytn.strangerstrings.Exception.Handler;
 
-import com.gabcytn.strangerstrings.Exception.AuthenticationException;
+import com.gabcytn.strangerstrings.Exception.DuplicateUserUniqueConstraintException;
 import com.gabcytn.strangerstrings.Exception.RefreshTokenException;
+import com.gabcytn.strangerstrings.Exception.UserNotFoundException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -63,10 +64,16 @@ public class GlobalExceptionHandler {
       errorDetail.setProperty("description", "Incorrect token format.");
     }
 
-    if (exception instanceof AuthenticationException) {
+    if (exception instanceof UserNotFoundException) {
       errorDetail =
-          ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(403), exception.getMessage());
+          ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(401), exception.getMessage());
       errorDetail.setProperty("description", "Failed to authenticate.");
+    }
+
+    if (exception instanceof DuplicateUserUniqueConstraintException) {
+      errorDetail =
+              ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(401), exception.getMessage());
+      errorDetail.setProperty("description", "Username and/or email already exists.");
     }
 
     if (exception instanceof RefreshTokenException) {

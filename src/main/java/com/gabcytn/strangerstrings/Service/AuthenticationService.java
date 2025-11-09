@@ -48,15 +48,22 @@ public class AuthenticationService {
   public JwtResponseDto authenticate(LoginRequestDto user, String refreshToken) {
     Authentication authToken =
         new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());
-    Authentication authentication = authenticationManager.authenticate(authToken);
-
-    if (!authentication.isAuthenticated()) throw new UserNotFoundException();
+    Authentication authentication;
+    try {
+      authentication = authenticationManager.authenticate(authToken);
+    } catch (RuntimeException e) {
+      throw new UserNotFoundException();
+    }
+    if (!authentication.isAuthenticated()) {
+      throw new UserNotFoundException();
+    }
     String token = jwtService.generateToken(user.getUsername());
 
     if (refreshToken == null) {
       String generatedRefreshToken = jwtService.generateRefreshToken();
       RefreshTokenValidator tokenValidatorDto =
-          new RefreshTokenValidator(generatedRefreshToken, user.getUsername(), user.getDeviceName());
+          new RefreshTokenValidator(
+              generatedRefreshToken, user.getUsername(), user.getDeviceName());
       refreshTokenDao.save(tokenValidatorDto);
       jwtService.sendRefreshTokenInResponseCookie(generatedRefreshToken);
     }
@@ -66,16 +73,16 @@ public class AuthenticationService {
   public JwtResponseDto newJwt(String oldRefreshToken, String deviceName)
       throws RefreshTokenException, RefreshTokenNotFoundException {
     RefreshTokenValidator tokenValidator =
-        refreshTokenDao
-            .findById(oldRefreshToken)
-            .orElseThrow(RefreshTokenNotFoundException::new);
+        refreshTokenDao.findById(oldRefreshToken).orElseThrow(RefreshTokenNotFoundException::new);
     if (!deviceName.equals(tokenValidator.getDeviceName()))
       throw new RefreshTokenException("Stored device name does not match request's device name");
     String jwt = jwtService.generateToken(tokenValidator.getUsername());
 
     refreshTokenDao.deleteById(oldRefreshToken);
     String newRefreshToken = jwtService.generateRefreshToken();
-    refreshTokenDao.save(new RefreshTokenValidator(newRefreshToken, tokenValidator.getUsername(), tokenValidator.getDeviceName()));
+    refreshTokenDao.save(
+        new RefreshTokenValidator(
+            newRefreshToken, tokenValidator.getUsername(), tokenValidator.getDeviceName()));
     jwtService.sendRefreshTokenInResponseCookie(newRefreshToken);
     return new JwtResponseDto(jwt, jwtService.getExpirationTime());
   }
